@@ -60,7 +60,7 @@
                         </el-col>
                     </el-row>   
                     <div>
-                        <el-button type="primary" style="margin-left: 71%;margin-top: 10px">换一换</el-button>
+                        <el-button v-if="vis == true" type="primary" style="margin-left: 71%;margin-top: 10px" @click="change_word">换一换</el-button>
                     </div>
                 </div>
             </div>
@@ -87,12 +87,14 @@
 </template>
 
 <script setup>
+import axios from 'axios';
 import { ref,onMounted,onUpdated } from 'vue'
 const textarea = ref('')
 const word_list = ref(['apple','flask','redis','surface','compute'])
 //const dictionaries = ref(['六级词典','四级词典','考研词典','考公词典'])
 const bottom = ref()
 const ad_btm = ref()
+const vis = ref('true')
 const history_message = ref([
     {
         target:'rbt',
@@ -133,13 +135,13 @@ const toSubmit=()=>{
         alert("发送内容为空！")
     }else{
         history_message.value.push({
-            target:'rbt',
+            target:'user',
             text:textarea.value
         })
         textarea.value =""
     }
     scrollToBottom()
-
+    getMessage()
     
 }
 onUpdated(() => {
@@ -149,7 +151,54 @@ onUpdated(() => {
 onMounted(() => {
     scrollToBottom()
     ad_btm.value.scrollTop = ad_btm.value.scrollHeight
+    axios({
+        url:"http://localhost:9090/word",
+        method:'GET'
+    }).then((res)=>{
+        console.log(res.data)
+        localStorage.setItem("token",res.data.token)
+        word_list.value = res.data.words
+        getMessage()
+    })
 })
+const getMessage=()=>{
+    axios({
+        url:"http://127.0.0.1:9090/ask",
+        headers:{
+            'token':localStorage.getItem("token"),
+            'Content-Type':'application/json;charset=utf-8'
+        },
+        method:'POST',
+        data:{
+            ask:textarea.value
+        }
+    }).then((res)=>{
+        console.log(res)
+        let s = {
+            'target':'rbt',
+            'text':res.data.chat
+        }
+        history_message.value.push(s)
+        let xx = {
+            'text':res.data.check
+        }
+        as_message.value.push(xx)
+    })
+}
+const change_word=()=>{
+    axios({
+        url:"http://localhost:9090/word",
+        method:'GET',
+        headers:{
+            'token':localStorage.getItem("token")
+        }
+    }).then((res)=>{
+        console.log(res.data)
+        word_list.value = res.data.words
+        vis.value = false
+        getMessage()
+    })
+}
 </script>
 
 <style lang="scss" scoped>
