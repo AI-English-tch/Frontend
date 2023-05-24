@@ -85,38 +85,8 @@ const word_list = ref(['apple','flask','redis','surface','compute'])
 const bottom = ref()
 const ad_btm = ref()
 const vis = ref('true')
-const history_message = ref([
-    // {
-    //     target:'rbt',
-    //     text:"Let's start learning the first word,could you give me a sentence include 'hello'"
-    // },
-    // {
-    //     target:'user',
-    //     text:'hello world'
-    // },
-    // {
-    //     target:'user',
-    //     text:'ifsnglnslkfsfksfnskglnslkfsfksfnsk.fns.glnslkfsfksfnsk.fns.glnslkfsfksfnsk.fns.glnslkfs;border: solid rgb(207, 229, 246) 0.05cm;border-radius: 10px;;border: solid rgb(207, 229, 246) 0.05cm;border-radius: 10px;;border: solid rgb(207, 229, 246) 0.05cm;border-radius: 10px;fksfnsk.fns..fnsglnslkfsfksfnsk.fns..fs'
-    // },
-    // {
-    //     target:'rbt',
-    //     text:'ifsnglnslkfsfksfnskglnslkfsfksfnsk.fns.glnslkfsfksfnsk.fns.glnslkfsfksfnsk.fns.glnslkfs;border: solid rgb(207, 229, 246) 0.05cm;border-radius: 10px;;border: solid rgb(207, 229, 246) 0.05cm;border-radius: 10px;;border: solid rgb(207, 229, 246) 0.05cm;border-radius: 10px;fksfnsk.fns..fnsglnslkfsfksfnsk.fns..fs'
-    // },
-])
-const as_message = ref([
-    // {
-    //     text:"ifsnglnslkfsfksfnskglnslkfsfksfnsk.fns.glnslkfsfksfnsk.fns.glnslkfsfksfnsk.fns.glnslkfs;border: solid",
-    // },
-    // {
-    //     text:"ifsnglnslkfsfksfnskglnslkfsfksfnsk.fns.glnslkfsfksfnsk.fns.glnslkfsfksfnsk.fns.glnslkfs;border: solid"
-    // },
-    // {
-    //     text:"ifsnglnslkfsfksfnskglnslkfsfksfnsk.fns.glnslkfsfksfnsk.fns.glnslkfsfksfnsk.fns.glnslkfs;border: solid"
-    // },
-    // {
-    //     text:"ifsnglnslkfsfksfnskglnslkfsfksfnsk.fns.glnslkfsfksfnsk.fns.glnslkfsfksfnsk.fns.glnslkfs;border: solid"
-    // }
-])
+const history_message = ref([])
+const as_message = ref([])
 const scrollToBottom = () => {
       bottom.value.scrollTop = bottom.value.scrollHeight // 将滚动条设置到最底部
     }
@@ -204,10 +174,6 @@ const change_word=()=>{
     height: 670px;
     border: solid 0.01cm;
     border-top-left-radius: 20px;
-
-    
-
-    
 }
 .key_words{
     width: 23%;
