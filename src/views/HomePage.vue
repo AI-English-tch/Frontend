@@ -4,7 +4,7 @@
             <div style="height:610px;overflow-y: auto" ref="bottom">
                 <div v-for="item in history_message" :key="item"  class="messages" style="display: flex;">
                     <div v-if="'rbt'==item.target" class="message" style="margin-top: 20px;margin-left: 10px;background-color: transparent;">
-                        <img style="border-radius: 50%;width: 50px;height: 50px;border: solid 0.01cm;" src="https://ts3.cn.mm.bing.net/th?id=OIP-C.z14sN0yiNEyPL7GjoAQ5kAHaHa&w=250&h=250&c=8&rs=1&qlt=90&o=6&dpr=1.3&pid=3.1&rm=2" alt="">
+                        <img style="border-radius: 50%;width: 50px;height: 50px;border: solid 0.01cm;" src="https://img95.699pic.com/element/40119/1268.png_300.png" alt="">
                         <div style="margin-top: -50px;background-color: rgb(254, 254, 254);max-width: 910px;margin-left: 60px;padding: 10px;;border: solid rgb(207, 229, 246) 0.05cm;border-radius: 10px;">
                             <span style="white-space: normal; word-break:break-all;display: inline;">{{ item.text }}</span>
                         </div>
@@ -38,15 +38,6 @@
         </div>
         <div class="key_words">
             <div class="dictionary" style="text-align: left;">
-                <!-- <el-select v-model="value" class="m-2" placeholder="Select" size="large">
-                    <el-option
-                    v-for="item in dictionaries"
-                    :key="item"
-                    :label="item"
-                    placeholder="请选择"
-                    :value="item"
-                    />
-                </el-select> -->
                 <br>
                 <div style="padding-left: 20px;padding-right: 20px;">
                     <div>
@@ -60,7 +51,7 @@
                         </el-col>
                     </el-row>   
                     <div>
-                        <el-button v-if="vis == true" type="primary" style="margin-left: 71%;margin-top: 10px" @click="change_word">换一换</el-button>
+                        <el-button v-if="vis" type="primary" style="margin-left: 71%;margin-top: 10px" @click="change_word">换一换</el-button>
                     </div>
                 </div>
             </div>
@@ -72,7 +63,7 @@
                     
                     <div v-for="item in as_message" :key="item" >
                         <div style="margin-top: 20px;margin-left: 10px;background-color: transparent;">
-                            <img style="border-radius: 50%;width: 50px;height: 50px;border: solid 0.01cm;" src="https://ts3.cn.mm.bing.net/th?id=OIP-C.z14sN0yiNEyPL7GjoAQ5kAHaHa&w=250&h=250&c=8&rs=1&qlt=90&o=6&dpr=1.3&pid=3.1&rm=2" alt="">
+                            <img style="border-radius: 50%;width: 50px;height: 50px;border: solid 0.01cm;" src="https://bpic.51yuansu.com/pic3/cover/02/57/45/59fb7bb94239b_610.jpg" alt="">
                             <div style="margin-top: -50px;background-color: rgb(223, 244, 250);max-width: 70%;margin-left: 60px;padding: 10px;;border: solid rgb(207, 229, 246) 0.05cm;border-radius: 10px;">
                                 <span style="white-space: normal; word-break: break-all;;">{{ item.text }}</span>
                             </div>
@@ -91,45 +82,48 @@ import axios from 'axios';
 import { ref,onMounted,onUpdated } from 'vue'
 const textarea = ref('')
 const word_list = ref(['apple','flask','redis','surface','compute'])
-//const dictionaries = ref(['六级词典','四级词典','考研词典','考公词典'])
 const bottom = ref()
 const ad_btm = ref()
 const vis = ref('true')
 const history_message = ref([
-    {
-        target:'rbt',
-        text:"Let's start learning the first word,could you give me a sentence include 'hello'"
-    },
-    {
-        target:'user',
-        text:'hello world'
-    },
-    {
-        target:'user',
-        text:'ifsnglnslkfsfksfnskglnslkfsfksfnsk.fns.glnslkfsfksfnsk.fns.glnslkfsfksfnsk.fns.glnslkfs;border: solid rgb(207, 229, 246) 0.05cm;border-radius: 10px;;border: solid rgb(207, 229, 246) 0.05cm;border-radius: 10px;;border: solid rgb(207, 229, 246) 0.05cm;border-radius: 10px;fksfnsk.fns..fnsglnslkfsfksfnsk.fns..fs'
-    },
-    {
-        target:'rbt',
-        text:'ifsnglnslkfsfksfnskglnslkfsfksfnsk.fns.glnslkfsfksfnsk.fns.glnslkfsfksfnsk.fns.glnslkfs;border: solid rgb(207, 229, 246) 0.05cm;border-radius: 10px;;border: solid rgb(207, 229, 246) 0.05cm;border-radius: 10px;;border: solid rgb(207, 229, 246) 0.05cm;border-radius: 10px;fksfnsk.fns..fnsglnslkfsfksfnsk.fns..fs'
-    },
+    // {
+    //     target:'rbt',
+    //     text:"Let's start learning the first word,could you give me a sentence include 'hello'"
+    // },
+    // {
+    //     target:'user',
+    //     text:'hello world'
+    // },
+    // {
+    //     target:'user',
+    //     text:'ifsnglnslkfsfksfnskglnslkfsfksfnsk.fns.glnslkfsfksfnsk.fns.glnslkfsfksfnsk.fns.glnslkfs;border: solid rgb(207, 229, 246) 0.05cm;border-radius: 10px;;border: solid rgb(207, 229, 246) 0.05cm;border-radius: 10px;;border: solid rgb(207, 229, 246) 0.05cm;border-radius: 10px;fksfnsk.fns..fnsglnslkfsfksfnsk.fns..fs'
+    // },
+    // {
+    //     target:'rbt',
+    //     text:'ifsnglnslkfsfksfnskglnslkfsfksfnsk.fns.glnslkfsfksfnsk.fns.glnslkfsfksfnsk.fns.glnslkfs;border: solid rgb(207, 229, 246) 0.05cm;border-radius: 10px;;border: solid rgb(207, 229, 246) 0.05cm;border-radius: 10px;;border: solid rgb(207, 229, 246) 0.05cm;border-radius: 10px;fksfnsk.fns..fnsglnslkfsfksfnsk.fns..fs'
+    // },
 ])
 const as_message = ref([
-    {
-        text:"ifsnglnslkfsfksfnskglnslkfsfksfnsk.fns.glnslkfsfksfnsk.fns.glnslkfsfksfnsk.fns.glnslkfs;border: solid",
-    },
-    {
-        text:"ifsnglnslkfsfksfnskglnslkfsfksfnsk.fns.glnslkfsfksfnsk.fns.glnslkfsfksfnsk.fns.glnslkfs;border: solid"
-    },
-    {
-        text:"ifsnglnslkfsfksfnskglnslkfsfksfnsk.fns.glnslkfsfksfnsk.fns.glnslkfsfksfnsk.fns.glnslkfs;border: solid"
-    },
-    {
-        text:"ifsnglnslkfsfksfnskglnslkfsfksfnsk.fns.glnslkfsfksfnsk.fns.glnslkfsfksfnsk.fns.glnslkfs;border: solid"
-    }
+    // {
+    //     text:"ifsnglnslkfsfksfnskglnslkfsfksfnsk.fns.glnslkfsfksfnsk.fns.glnslkfsfksfnsk.fns.glnslkfs;border: solid",
+    // },
+    // {
+    //     text:"ifsnglnslkfsfksfnskglnslkfsfksfnsk.fns.glnslkfsfksfnsk.fns.glnslkfsfksfnsk.fns.glnslkfs;border: solid"
+    // },
+    // {
+    //     text:"ifsnglnslkfsfksfnskglnslkfsfksfnsk.fns.glnslkfsfksfnsk.fns.glnslkfsfksfnsk.fns.glnslkfs;border: solid"
+    // },
+    // {
+    //     text:"ifsnglnslkfsfksfnskglnslkfsfksfnsk.fns.glnslkfsfksfnsk.fns.glnslkfsfksfnsk.fns.glnslkfs;border: solid"
+    // }
 ])
 const scrollToBottom = () => {
       bottom.value.scrollTop = bottom.value.scrollHeight // 将滚动条设置到最底部
     }
+
+const scrollToBottomAd = () => {
+    ad_btm.value.scrollTop = ad_btm.value.scrollHeight
+}
 const toSubmit=()=>{
     if(!textarea.value){
         alert("发送内容为空！")
@@ -138,32 +132,32 @@ const toSubmit=()=>{
             target:'user',
             text:textarea.value
         })
+        getMessage()
         textarea.value =""
     }
     scrollToBottom()
-    getMessage()
+    scrollToBottomAd()
     
 }
 onUpdated(() => {
     bottom.value.scrollTop = bottom.value.scrollHeight // 组件更新后也将滚动条设置到底部
     scrollToBottom()
+    scrollToBottomAd()
 })
 onMounted(() => {
     scrollToBottom()
-    ad_btm.value.scrollTop = ad_btm.value.scrollHeight
     axios({
-        url:"http://localhost:9090/word",
+        url:"/dev-api/word",
         method:'GET'
     }).then((res)=>{
-        console.log(res.data)
-        localStorage.setItem("token",res.data.token)
-        word_list.value = res.data.words
+        localStorage.setItem("token",res.data.data.token)
+        word_list.value = res.data.data.words
         getMessage()
     })
 })
 const getMessage=()=>{
     axios({
-        url:"http://127.0.0.1:9090/ask",
+        url:"/dev-api/ask",
         headers:{
             'token':localStorage.getItem("token"),
             'Content-Type':'application/json;charset=utf-8'
@@ -173,29 +167,31 @@ const getMessage=()=>{
             ask:textarea.value
         }
     }).then((res)=>{
-        console.log(res)
         let s = {
             'target':'rbt',
-            'text':res.data.chat
+            'text':res.data.data.chat
         }
         history_message.value.push(s)
         let xx = {
-            'text':res.data.check
+            'text':res.data.data.check
         }
-        as_message.value.push(xx)
+        if (xx.text != null) {
+            as_message.value.push(xx)
+        }
     })
 }
 const change_word=()=>{
     axios({
-        url:"http://localhost:9090/word",
+        url:"/dev-api/word",
         method:'GET',
         headers:{
             'token':localStorage.getItem("token")
         }
     }).then((res)=>{
-        console.log(res.data)
-        word_list.value = res.data.words
+        word_list.value = res.data.data.words
         vis.value = false
+        history_message.value = []
+        as_message.value = []
         getMessage()
     })
 }
