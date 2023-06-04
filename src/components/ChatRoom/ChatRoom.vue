@@ -78,7 +78,8 @@ async function handleSend() {
   }
 }
 async function getSource() {
-  let url = '/api-dev/assistant' + encodeURIComponent(message.value)
+  const msg = encodeURIComponent(message.value)
+  let url = '/dev-api/assistant?assistant=' + msg
   var cSource = new EventSource(url)
   cSource.addEventListener("open", function () {
     console.log("connect");
