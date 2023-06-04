@@ -1,7 +1,7 @@
 <template>
   <div class="layout-header flex justify-between p-4 text-white shadow">
     <h1 class="font-bold text-xl">
-      AI-English-Tch
+      WordTalk
     </h1>
     <div class="flex space-x-4 items-center">
       <el-icon>

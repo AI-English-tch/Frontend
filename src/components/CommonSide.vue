@@ -27,7 +27,7 @@
                         <ChatSquare />
                       </el-icon>
                       <div class="flex-1 text-ellipsis max-h-5 overflow-hidden break-all relative">
-                        写商业汇票
+                        CET-6
                       </div>
                       <div class="absolute flex right-2 space-x-2 z-10 text-gray-300" v-show="visible">
                         <el-icon class="transition-colors hover:text-white">

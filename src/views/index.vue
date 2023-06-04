@@ -74,33 +74,33 @@ onMounted(() => {
   // 建立Source 连接
   // startSource()
 });
-onUnmounted(() => {
-  // 关闭页面 Source 连接
-  closeSource();
-});
+// onUnmounted(() => {
+//   // 关闭页面 Source 连接
+//   closeSource();
+// });
 
 // 开始 source
-const startSource = (msg: string) => {
-  let url = '/dev-api/assistant?assistant=' + encodeURIComponent(msg)
-  const cSource = source.chatSource = new EventSource(url);
-
-  cSource.addEventListener('open',() => {
-    console.log('连接成功！');
-  },false)
-  
-  cSource.addEventListener('message',(e) => {
-    ChatRoom2Ref.value?.updateMsgList(e.data);
-    console.log(`resp:(${e.data})`);
-  },false)
-
-  cSource.addEventListener('error',(err) => {
-    console.log('连接错误 :>> ', err);
-  },false)
-};
-// 关闭 source
-const closeSource = () => {
-  if(source.chatSource){source.chatSource.close()}
-};
+// const startSource = (msg: string) => {
+//   let url = '/dev-api/assistant?assistant=' + encodeURIComponent(msg)
+//   const cSource = source.chatSource = new EventSource(url);
+//
+//   cSource.addEventListener('open',() => {
+//     console.log('连接成功！');
+//   },false)
+//
+//   cSource.addEventListener('message',(e) => {
+//     ChatRoom2Ref.value?.updateMsgList(e.data);
+//     console.log(`resp:(${e.data})`);
+//   },false)
+//
+//   cSource.addEventListener('error',(err) => {
+//     console.log('连接错误 :>> ', err);
+//   },false)
+// };
+// // 关闭 source
+// const closeSource = () => {
+//   if(source.chatSource){source.chatSource.close()}
+// };
 const handleChangeWord = () => {
   axios({
     url: '/dev-api/word',
@@ -116,8 +116,8 @@ const handleChangeWord = () => {
   });
 };
 
-const handleCallback = (data: any) => {
-  ChatRoom2Ref.value?.updateMsgList(data);
+const handleCallback = (param) => {
+  ChatRoom2Ref.value?.updateMsgList(param);
 };
 </script>
 
@@ -127,7 +127,7 @@ const handleCallback = (data: any) => {
 }
 .right-box{
   background-color: #f1f1f1;
-  width: 20%;
+  width: 30%;
   min-width: 300px;
 }
 .hover-shadow{

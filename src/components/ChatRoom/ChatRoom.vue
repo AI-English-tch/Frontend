@@ -6,7 +6,7 @@
           v-for="(item, index) in messageList" :key="index + item.target + item.text">
           <div class="chat-msg-profile">
             <img class="chat-msg-img"
-              :src="item.target === 'rbt' ? 'https://img95.699pic.com/element/40119/1268.png_300.png' : 'https://ts3.cn.mm.bing.net/th?id=OIP-C.z14sN0yiNEyPL7GjoAQ5kAHaHa&w=250&h=250&c=8&rs=1&qlt=90&o=6&dpr=1.3&pid=3.1&rm=2'"
+              :src="item.target === 'rbt' ? rbtJpg : userJpg"
               alt="">
             <div class="chat-msg-date">{{ item.date }}</div>
           </div>
@@ -41,6 +41,9 @@ import axios from "axios";
 import { ElNotification, ElScrollbar } from "element-plus/lib/components/index.js";
 import { trim } from "lodash";
 import { dayjs } from 'element-plus';
+import { EventSourcePolyfill } from 'event-source-polyfill';
+import userJpg from '../../assets/user.jpg';
+import rbtJpg from '../../assets/rbt.jpg';
 const props = defineProps({
   apiKey: {
     type: String,
@@ -74,74 +77,74 @@ async function handleSend() {
     })
     // assistant 接口
     props.apiKey === 'assistant' ? getSource() : getMessageList()
-    // getMessageList()
   }
 }
 async function getSource() {
-  const msg = encodeURIComponent(message.value)
-  let url = '/dev-api/assistant?assistant=' + msg
-  var cSource = new EventSource(url)
-  cSource.addEventListener("open", function () {
-    console.log("connect");
-  });
-  //如果服务器响应报文中没有指明事件，默认触发message事件
-  cSource.addEventListener("message", function (e) {
-    console.log(`resp:(${e.data})`);
-    if (e.data.check) {
-      props.callback && props.callback({
-        'target': 'rbt',
-        'text': e.data.check
-      })
+  let url = '/dev-api/assistant?assistant=' + encodeURIComponent(message.value)
+  var cSource = new EventSourcePolyfill(url, {
+    headers: {
+      token: localStorage.getItem('token')
     }
   })
-  // todo...
+  let flag = true;
+  cSource.onmessage = (event) => {
+    setMessageList(event,flag);
+    flag = false;
+  }
+  cSource.addEventListener("end", function () {
+    cSource.close();
+  });
 }
 async function getMessageList() {
-  let params = {
-  } as Record<string, string>
-  params[props.apiKey] = message.value
+  let param = { ask: message.value };
   message.value = ""
-  var askSource = new EventSource(`/api-dev/ask?ask=${encodeURIComponent(params.ask)}`)
-  askSource.addEventListener("message", function (e) {
-    messageList.value.push({
-      'target': 'rbt',
-      'text': e.data['ask'],
-      date: dayjs().format("YYYY-MM-DD H:mm:ss")
-    })
-  })
-  const { data } = await axios({
-    url: "/dev-api/" + props.apiKey,
-    headers: {
-      'token': localStorage.getItem("token"),
-      'Content-Type': 'application/json;charset=utf-8'
-    },
-    method: 'POST',
-    data: params
-  })
-  
-  const resultKey = props.apiKey === 'ask' ? 'chat' : 'assistant'
-  if (data.data[resultKey]) {
-    messageList.value.push({
-      'target': 'rbt',
-      'text': data.data[resultKey],
-      date: dayjs().format("YYYY-MM-DD H:mm:ss")
-    })
-  }
-
-  if (props.apiKey === 'ask') {
-    if (data.data.check) {
-      props.callback && props.callback({
-        'target': 'rbt',
-        'text': data.data.check
-      })
-    }
+  getMessage(param, 'chat'); // chat:对话区,assistant:助手区
+  if (props.callback) {
+    props.callback(param);
   }
   handleToBottom()
 }
 
-function handleToBottom() {
-  console.log("innerRef.value?.clientHeight", innerRef.value?.clientHeight);
+const getMessage = (param, type) => {
+  const ask = encodeURIComponent(param.ask);
+  const urlConfig = {
+    chat: `/dev-api/ask1?ask=${ask}`,
+    assistant: `/dev-api/ask2?ask=${ask}`,
+  }
+  var askSource = new EventSourcePolyfill(urlConfig[type] || urlConfig['chat'], {
+    headers: {
+      token: localStorage.getItem('token')
+    }
+  })
+  let flag = true;
+  askSource.onmessage = (event) => {
+    setMessageList(event,flag);
+    flag = false;
+  }
+  askSource.addEventListener("end", function () {
+    askSource.close();
+  });
+}
 
+
+
+const setMessageList = (res,flag) => { // 将流式返回数据设置到messageList
+  if(flag) {
+    messageList.value.push({
+      'target': 'rbt',
+      'text': res.data,
+      date: dayjs().format("YYYY-MM-DD H:mm:ss")
+    })
+  } else {
+    messageList.value.map((item,index) => {
+      if(index === messageList.value.length - 1) {
+        item.text = item.text + res.data;
+      }
+    })
+  }
+}
+
+function handleToBottom() {
   scrollbarRef.value!.setScrollTop(innerRef.value?.clientHeight)
 }
 
@@ -154,8 +157,10 @@ defineExpose({
     messageList.value = []
   },
   getMsgList: getMessageList,
-  updateMsgList: (data: any) => {
-    messageList.value.push(data)
+  updateMsgList: (param) => {
+    if(param && param.ask) {// 初始或者输入框内容为空不调用助手检测
+      getMessage(param, 'assistant');
+    }
   }
 })
 

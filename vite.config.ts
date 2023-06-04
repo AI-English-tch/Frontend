@@ -49,9 +49,9 @@ export default defineConfig({
   server: {
     proxy: {
       '/dev-api': {
-        target: 'http://23.251.61.213:9090/',
+        // target: 'http://23.251.61.213:9090/',
         // before
-        // target: 'http://23.251.61.213:9091/',
+        target: 'http://23.251.61.213:9091/',
         changeOrigin: true,
         rewrite: path => path.replace(/^\/dev-api/, ''),
       },
