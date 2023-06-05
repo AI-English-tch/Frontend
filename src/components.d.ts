@@ -14,7 +14,6 @@ declare module '@vue/runtime-core' {
     CommonSide: typeof import('./components/CommonSide.vue')['default']
     ElAvatar: typeof import('element-plus/es')['ElAvatar']
     ElButton: typeof import('element-plus/es')['ElButton']
-    ElCard: typeof import('element-plus/es')['ElCard']
     ElIcon: typeof import('element-plus/es')['ElIcon']
     ElInput: typeof import('element-plus/es')['ElInput']
     ElTag: typeof import('element-plus/es')['ElTag']

@@ -37,13 +37,19 @@
 import 'element-plus/es/components/notification/style/css'
 import 'element-plus/es/components/scrollbar/style/css'
 import { ChatDotSquare, Position } from "@element-plus/icons-vue"
-import axios from "axios";
+// import axios from "axios";
 import { ElNotification, ElScrollbar } from "element-plus/lib/components/index.js";
 import { trim } from "lodash";
 import { dayjs } from 'element-plus';
 import { EventSourcePolyfill } from 'event-source-polyfill';
 import userJpg from '../../assets/user.jpg';
 import rbtJpg from '../../assets/rbt.jpg';
+// ** 用于解决TS 类型报错接口，后期应模块化优化 **
+interface TsObject {
+  data?: any,
+  ask?: string
+}
+
 const props = defineProps({
   apiKey: {
     type: String,
@@ -87,7 +93,7 @@ async function getSource() {
     }
   })
   let flag = true;
-  cSource.onmessage = (event) => {
+  cSource.onmessage = (event: TsObject) => {
     setMessageList(event,flag);
     flag = false;
   }
@@ -105,19 +111,19 @@ async function getMessageList() {
   handleToBottom()
 }
 
-const getMessage = (param, type) => {
+const getMessage = (param: TsObject, type: any) => {
   const ask = encodeURIComponent(param.ask);
   const urlConfig = {
     chat: `/dev-api/ask1?ask=${ask}`,
     assistant: `/dev-api/ask2?ask=${ask}`,
   }
-  var askSource = new EventSourcePolyfill(urlConfig[type] || urlConfig['chat'], {
+  var askSource = new EventSourcePolyfill(urlConfig[type as string] || urlConfig['chat'], {
     headers: {
       token: localStorage.getItem('token')
     }
   })
   let flag = true;
-  askSource.onmessage = (event) => {
+  askSource.onmessage = (event:TsObject) => {
     setMessageList(event,flag);
     flag = false;
   }
@@ -128,7 +134,7 @@ const getMessage = (param, type) => {
 
 
 
-const setMessageList = (res,flag) => { // 将流式返回数据设置到messageList
+const setMessageList = (res:TsObject,flag: any) => { // 将流式返回数据设置到messageList
   if(flag) {
     messageList.value.push({
       'target': 'rbt',
@@ -157,7 +163,7 @@ defineExpose({
     messageList.value = []
   },
   getMsgList: getMessageList,
-  updateMsgList: (param) => {
+  updateMsgList: (param:TsObject) => {
     if(param && param.ask) {// 初始或者输入框内容为空不调用助手检测
       getMessage(param, 'assistant');
     }

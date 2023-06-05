@@ -59,9 +59,9 @@ const ChatRoom1Ref = ref<InstanceType<typeof ChatRoom>>();
 const room2Height = computed(() => {
   return room2.value?.clientHeight ? room2.value?.clientHeight - 8 : 0;
 });
-const source = reactive({
-  chatSource:'',
-})
+// const source = reactive({
+//   chatSource:'',
+// })
 onMounted(() => {
   axios({
     url: '/dev-api/word',
@@ -116,7 +116,7 @@ const handleChangeWord = () => {
   });
 };
 
-const handleCallback = (param) => {
+const handleCallback = (param:any) => {
   ChatRoom2Ref.value?.updateMsgList(param);
 };
 </script>

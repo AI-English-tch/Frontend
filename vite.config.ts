@@ -8,9 +8,20 @@ import path from 'path';
 
 const pathSrc = path.resolve(__dirname, 'src');
 export default defineConfig({
+  base: './',
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            return id.toString().split('node_modules/')[1].split('/')[0].toString();
+          }
+        }
+      }
+    }
+  },
   plugins: [
     vue(),
-
     AutoImport({
       dts: 'src/auto-imports.d.ts',
       imports: ['vue', 'vue-router'],
