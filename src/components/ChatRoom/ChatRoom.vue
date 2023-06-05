@@ -124,6 +124,7 @@ const getMessage = (param: TsObject, type: any) => {
   })
   let flag = true;
   askSource.onmessage = (event:TsObject) => {
+    console.log('onmessage event :>> ', event);
     setMessageList(event,flag);
     flag = false;
   }
