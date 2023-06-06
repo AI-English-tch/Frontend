@@ -1,11 +1,12 @@
 <template>
   <div class="w-full relative h-full">
-    <el-scrollbar ref="scrollbarRef" class="h-full">
-      <div ref="innerRef" class="flex flex-col pb-8">
-        <div :class="['px-5 pb-10 flex chat-msg', { 'owner': item.target === 'user' }]"
+    <el-scrollbar ref="scrollbarRef" class="h-[calc(100%-40px)]" style="height: calc(100%-40);">
+      <div ref="innerRef" class="flex flex-col pb-10">
+        <div :class="['px-1 pb-8 flex chat-msg', { 'owner': item.target === 'user' }]"
           v-for="(item, index) in messageList" :key="index + item.target + item.text">
           <div class="chat-msg-profile">
             <img class="chat-msg-img"
+              v-if="$props.apiKey === 'ask'"
               :src="item.target === 'rbt' ? rbtJpg : userJpg"
               alt="">
             <div class="chat-msg-date">{{ item.date }}</div>
@@ -17,7 +18,7 @@
       </div>
     </el-scrollbar>
 
-    <div class="flex items-center space-x-2 w-full absolute bottom-0">
+    <div class="flex items-center space-x-2 w-full absolute bottom-0 bg-white py-1">
       <el-icon>
         <ChatDotSquare />
       </el-icon>
@@ -94,6 +95,7 @@ async function getSource() {
   })
   let flag = true;
   cSource.onmessage = (event: TsObject) => {
+    handleToBottom()
     setMessageList(event,flag);
     flag = false;
   }
@@ -124,7 +126,9 @@ const getMessage = (param: TsObject, type: any) => {
   })
   let flag = true;
   askSource.onmessage = (event:TsObject) => {
+    console.log('onmessage event :>> ', event);
     setMessageList(event,flag);
+    handleToBottom()
     flag = false;
   }
   askSource.addEventListener("end", function () {
@@ -176,7 +180,6 @@ defineExpose({
 .chat-msg {
   &-profile {
     flex-shrink: 0;
-    margin-top: auto;
     margin-bottom: -20px;
     position: relative;
   }
@@ -199,17 +202,18 @@ defineExpose({
   }
 
   &-content {
-    margin-left: 12px;
-    max-width: 70%;
+    margin-left: 8px;
+    max-width: 90%;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
   }
 
   &-text {
+    margin-top: 15px;
     background-color: #f1f2f6;
-    padding: 15px;
-    border-radius: 20px 20px 20px 0;
+    padding:6px 10px;
+    border-radius: 0 12px 12px 12px;
     line-height: 1.5;
     font-size: 14px;
     font-weight: 500;
@@ -227,14 +231,14 @@ defineExpose({
 
   .chat-msg-content {
     margin-left: 0;
-    margin-right: 12px;
+    margin-right: 8px;
     align-items: flex-end;
   }
 
   .chat-msg-text {
     background-color: #0086ff;
     color: #fff;
-    border-radius: 20px 20px 0 20px;
+    border-radius: 12px 0 12px 12px;
   }
 }
 </style>

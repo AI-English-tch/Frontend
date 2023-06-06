@@ -1,7 +1,7 @@
 <template>
   <div class="w-full h-full overflow-hidden flex">
     <div class="p-4 flex-1 flex flex-col">
-      <div class="flex-1 h-[calc(100vh-76px)]">
+      <div class="flex-1 h-full">
         <chat-room ref="ChatRoom1Ref" :callback="handleCallback" apiKey="ask"></chat-room>
       </div>
     </div>
@@ -11,9 +11,6 @@
         style="height: 55%"
         ref="room2"
       >
-        <p class="text-center absolute top-1 left-1/2 transform" style="translate: -50%">
-          Your Copilot
-        </p>
         <div class="flex-1" :style="{ height: room2Height + 'px' }">
           <chat-room ref="ChatRoom2Ref" apiKey="assistant"></chat-room>
         </div>
