@@ -23,7 +23,7 @@
     max-width: 1500px;
     height: calc(100vh - 100px);
     border-radius: 20px;
-    margin: 20px;
+    margin: 20px auto;
     background: #fff;
     border-radius: 20px;
     width: calc(100% - 40px);

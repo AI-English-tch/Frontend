@@ -87,7 +87,9 @@ async function handleSend() {
   }
 }
 async function getSource() {
-  let url = '/dev-api/assistant?assistant=' + encodeURIComponent(message.value)
+  const val = message.value
+  message.value = ''
+  let url = '/dev-api/assistant?assistant=' + encodeURIComponent(val)
   var cSource = new EventSourcePolyfill(url, {
     headers: {
       token: localStorage.getItem('token')
@@ -104,7 +106,8 @@ async function getSource() {
   });
 }
 async function getMessageList() {
-  let param = { ask: message.value };
+  const val = message.value
+  let param = { ask: val };
   message.value = ""
   getMessage(param, 'chat'); // chat:对话区,assistant:助手区
   if (props.callback) {
@@ -126,7 +129,6 @@ const getMessage = (param: TsObject, type: any) => {
   })
   let flag = true;
   askSource.onmessage = (event:TsObject) => {
-    console.log('onmessage event :>> ', event);
     setMessageList(event,flag);
     handleToBottom()
     flag = false;
