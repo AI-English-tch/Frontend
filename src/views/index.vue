@@ -1,116 +1,135 @@
 <template>
   <div class="w-full h-full overflow-hidden flex">
-    <div class="p-4 flex-1 flex flex-col">
+    <div v-if="currentSelectedSideBarItem" class="p-4 flex-1 flex flex-col">
       <div class="flex-1 h-full">
-        <chat-room ref="ChatRoom1Ref" :callback="handleCallback" apiKey="ask"></chat-room>
+        <chat-room ref="ChatRoom1Ref" :bookId="currentSelectedSideBarItem.id" :callback="handleCallback" apiKey="ask"></chat-room>
       </div>
     </div>
-    <div class="p-4 flex flex-col space-y-3 right-box">
-      <div
-        class="hover-shadow bg-white rounded-xl w-full flex flex-col p-2 relative"
-        style="height: 55%"
-        ref="room2"
-      >
-        <div class="flex-1" :style="{ height: room2Height + 'px' }">
-          <chat-room ref="ChatRoom2Ref" apiKey="assistant"></chat-room>
+    <div v-else class="p-4 flex-1 flex flex-col no-book">
+      想要和我对话学习英语吗，快选择你想要学习的词书吧！
+    </div>
+    <div class="flex flex-col rounded-xl space-y-3 pt-2 right-box">
+      <div v-if="currentSelectedSideBarItem" class="bg-white p-4 w-full flex-1 overflow-auto word-content">
+        <div class="book-name">正在阅览：{{currentSelectedSideBarItem?.text || ''}}</div>
+        <div class="mb-1 current-word">{{currentWord}}</div>
+        <div class="flex justify-around mb-3 operate-box">
+          <el-button @click="nextWord" class="operate-item" type="primary">掌握</el-button>
+          <el-button @click="nextWord" class="operate-item" type="primary">认识</el-button>
+          <el-button @click="nextWord" class="operate-item" type="primary">不会</el-button>
         </div>
-      </div>
-      <div class="hover-shadow bg-white p-4 rounded-xl w-full flex-1 overflow-auto" style="height: 40%">
-        <div class="flex justify-between border-b border-gray-600 pb-4 mb-4">
-          <el-button type="primary">功能区</el-button>
-          <el-button type="primary">历史记录</el-button>
-        </div>
-        <el-tag>单词预览</el-tag>
         <!-- 单词 -->
         <div class="word-box flex justify-start">
           <el-button
-            v-for="word in wordList"
-            :key="word"
-            text
-            bg
-            >{{ word }}</el-button
-          >
+              v-for="(item) in wordList"
+              :key="item.id"
+              text
+              bg
+              @click="handleChangeWord(item)"
+          >{{ item.word }}<span @click="clearWord(item)" class="close-icon"><el-icon><CloseBold /></el-icon></span></el-button>
         </div>
-        <!-- <div v-for="word in wordList" :key="word">
-          <el-card shadow="hover" style="height: 30px">
-            <span>{{ word }}</span>
-          </el-card>
-        </div> -->
-        <div class="flex justify-end">
-          <el-button type="primary" style="margin-top: 10px" @click="handleChangeWord">
-            换一换
-          </el-button>
+      </div>
+      <div v-else class="bg-white p-4 w-full flex-1 word-content no-book">
+        你还未选择词书哦
+      </div>
+      <div
+        class="bg-white rounded-xl w-full flex flex-col p-2 relative copilot-box"
+        style="height: 55%"
+        ref="room2"
+      >
+        <div v-if="currentSelectedSideBarItem" class="flex-1" :style="{ height: room2Height + 'px' }">
+          <chat-room ref="ChatRoom2Ref" :bookId="currentSelectedSideBarItem.id" apiKey="assistant"></chat-room>
+        </div>
+        <div v-else class="flex-1 no-book" :style="{ height: room2Height + 'px' }">
+          我是解答你学习过程中的疑问哒，快来问我吧！
         </div>
       </div>
     </div>
   </div>
 </template>
 <script setup lang="ts">
-import axios from 'axios';
+import { extractWords } from "@/api/word";
 import ChatRoom from '../components/ChatRoom/ChatRoom.vue';
+import { CloseBold } from "@element-plus/icons-vue";
+import useStore from "@/store/index"
+import { storeToRefs } from 'pinia'
+
+const store = useStore()
+
+const { sideBarStore } = store;
+
+const { currentSelectedSideBarItem } = storeToRefs(sideBarStore)
+
+watch(currentSelectedSideBarItem, (newValue)=>{ // 切换词书
+  const id = newValue.id;
+  extractWords({size:11},id).then((res :any) => {
+    const result = [];
+    res.data.forEach(item => {
+      result.push({
+        id: item.id,
+        word: item.word,
+      })
+    })
+    const firstWord = result.pop()?.word || '';
+    currentWord.value = firstWord;
+    ChatRoom1Ref.value?.initMsgList(firstWord);
+    ChatRoom2Ref.value?.initMsgList(firstWord);
+    wordList.value = result;
+  })
+},{deep:true})
 
 const wordList = ref<string[]>([]);
+const currentWord = ref<string>('');
 const room2 = ref<HTMLDivElement>();
 const ChatRoom1Ref = ref<InstanceType<typeof ChatRoom>>();
   const ChatRoom2Ref = ref<InstanceType<typeof ChatRoom>>();
 const room2Height = computed(() => {
   return room2.value?.clientHeight ? room2.value?.clientHeight - 8 : 0;
 });
-// const source = reactive({
-//   chatSource:'',
-// })
-onMounted(() => {
-  axios({
-    url: '/dev-api/word',
-    method: 'GET',
-  }).then(res => {
-    localStorage.setItem('token', res.data.data.token);
-    wordList.value = res.data.data.words;
-    ChatRoom1Ref.value?.getMsgList();
-  });
-  // 建立Source 连接
-  // startSource()
-});
-// onUnmounted(() => {
-//   // 关闭页面 Source 连接
-//   closeSource();
-// });
 
-// 开始 source
-// const startSource = (msg: string) => {
-//   let url = '/dev-api/assistant?assistant=' + encodeURIComponent(msg)
-//   const cSource = source.chatSource = new EventSource(url);
-//
-//   cSource.addEventListener('open',() => {
-//     console.log('连接成功！');
-//   },false)
-//
-//   cSource.addEventListener('message',(e) => {
-//     ChatRoom2Ref.value?.updateMsgList(e.data);
-//     console.log(`resp:(${e.data})`);
-//   },false)
-//
-//   cSource.addEventListener('error',(err) => {
-//     console.log('连接错误 :>> ', err);
-//   },false)
-// };
-// // 关闭 source
-// const closeSource = () => {
-//   if(source.chatSource){source.chatSource.close()}
-// };
-const handleChangeWord = () => {
-  axios({
-    url: '/dev-api/word',
-    method: 'GET',
-    headers: {
-      token: localStorage.getItem('token'),
-    },
-  }).then(res => {
-    wordList.value = res.data.data.words;
-    ChatRoom1Ref.value?.clearMsgList();
-    ChatRoom2Ref.value?.clearMsgList();
-    ChatRoom1Ref.value?.getMsgList();
-  });
+const clearWord = (current) => {  // 删除单词,必要时需要阻止冒泡
+  wordList.value = wordList.value.filter(item => item.id !== current.id);
+  extractWords({size:1},currentSelectedSideBarItem.value.id).then((res :any) => {
+    const result = [];
+    res.data.forEach(item => {
+      result.push({
+        id: item.id,
+        word: item.word,
+      })
+    })
+    wordList.value.push(...result);
+  })
+}
+
+const nextWord = () => { // 下一个单词
+  currentWord.value = wordList.value[0]?.word || '';
+  ChatRoom1Ref.value?.getMsgList(wordList.value[0]?.word || '');
+  wordList.value = wordList.value.filter((item,index) => index !== 0);
+  extractWords({size:1},currentSelectedSideBarItem.value.id).then((res :any) => {
+    const result = [];
+    res.data.forEach(item => {
+      result.push({
+        id: item.id,
+        word: item.word,
+      })
+    })
+    wordList.value.push(...result);
+  })
+}
+
+const handleChangeWord = (current) => { // 点击单词，对应的单词设置为当前单词，同时抽取一个单词
+  currentWord.value = current.word;
+  ChatRoom1Ref.value?.getMsgList(current.word);
+  wordList.value = wordList.value.filter(item => item.id !== current.id);
+  extractWords({size:1},currentSelectedSideBarItem.value.id).then((res :any) => {
+    const result = [];
+    res.data.forEach(item => {
+      result.push({
+        id: item.id,
+        word: item.word,
+      })
+    })
+    wordList.value.push(...result);
+  })
 };
 
 const handleCallback = (param:any) => {
@@ -122,22 +141,71 @@ const handleCallback = (param:any) => {
 .el-card__body {
   padding: 5px 12px !important;
 }
+.book-name {
+  border-bottom: 1px solid #333333;
+  font-size: 30px;
+  color: #89EEFC;
+  text-align: center;
+  margin-bottom: 24px;
+}
+.current-word {
+  font-size: 32px;
+  color: #333;
+  font-weight: 600;
+  text-align: center;
+}
+.operate-item {
+  max-width: 100px;
+  height: 50px;
+  border-radius: 10px;
+  color: #333;
+  &:hover, &:focus {
+    color: #333!important;
+  }
+}
+.word-content {
+  height: 40%;
+  border-bottom: 2px solid #333333;
+  border-radius: 20px 20px 0 0;
+}
 .right-box{
-  background-color: #f1f1f1;
+  background-color: rgba(255, 255, 255, 0.9764705882352941);
   width: 30%;
   min-width: 300px;
-}
-.hover-shadow{
-  transition: .3s;
-}
-.hover-shadow:hover{
-  box-shadow: 1px 0 5px #cfcfcf;
-  transition: .3s;
+  border-radius: 20px;
+  border: 1px solid rgba(121, 121, 121, 1);
 }
 .word-box{
   flex-wrap: wrap;
   .el-button{
-    margin: 5px;
+    border-radius: 10px;
+    background-color: #ccc!important;
+    margin: 8px;
+    height: 46px;
+    min-width: 80px;
+    position: relative;
+    .close-icon {
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      display: none;
+      border-radius: 50%;
+    }
+    &:hover {
+      .close-icon {
+        display: inline-block;
+      }
+    }
   }
 }
+.copilot-box {
+  border-radius: 0 0 20px 20px;
+}
+
+.no-book {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 </style>

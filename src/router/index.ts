@@ -17,10 +17,10 @@ export const router = createRouter({
       ],
     },
     {
-      path: '/login',
-      name: 'login',
-      component: () => import('../views/public/login.vue'),
-    },
+      path:'/login',
+      name:'login',
+      component: () => import('../views/public/login.vue') 
+    }
   ],
 });
 

@@ -1,24 +1,33 @@
 <template>
   <div class="w-full relative h-full">
-    <el-scrollbar ref="scrollbarRef" class="h-[calc(100%-40px)]" style="height: calc(100%-40);">
+    <el-switch
+        v-if="$props.apiKey === 'assistant'"
+        class="switchBtn" active-text="开启纠错"
+        inactive-text="关闭纠错"
+        :model-value="assistantSwitch"
+        @change="onSwitchChange"
+    />
+    <div :class="['chat-title', { 'copilot-title': props.apiKey === 'assistant' }]">
+      {{ title }}
+    </div>
+    <el-scrollbar ref="scrollbarRef" class="h-[calc(100%-40px)]" style="height: calc(100% - 40px);">
       <div ref="innerRef" class="flex flex-col pb-10">
-        <div :class="['px-1 pb-8 flex chat-msg', { 'owner': item.target === 'user' }]"
-          v-for="(item, index) in messageList" :key="index + item.target + item.text">
-          <div class="chat-msg-profile">
-            <img class="chat-msg-img"
-              v-if="$props.apiKey === 'ask'"
-              :src="item.target === 'rbt' ? rbtJpg : userJpg"
+        <template v-for="(item, index) in messageList" :key="index + item.target + item.text">
+          <div v-if="item.text.indexOf('*') > -1 ? false : true" :class="['px-1 pb-8 flex chat-msg', { 'owner': item.target === 'user' }]">
+            <div class="chat-msg-profile">
+              <img class="chat-msg-img" v-if="$props.apiKey === 'ask'" :src="item.target === 'rbt' ? rbtJpg : userJpg"
               alt="">
-            <div class="chat-msg-date">{{ item.date }}</div>
+              <div class="chat-msg-date">{{ item.date }}</div>
+            </div>
+            <div class="chat-msg-content">
+              <div class="chat-msg-text" v-html="formatText(item.text)"></div>
+            </div>
           </div>
-          <div class="chat-msg-content">
-            <div class="chat-msg-text" v-html="formatText(item.text)"></div>
-          </div>
-        </div>
+        </template>
       </div>
     </el-scrollbar>
 
-    <div class="flex items-center space-x-2 w-full absolute bottom-0 bg-white py-1">
+    <div class="flex items-center space-x-2 w-full absolute bottom-0  py-1">
       <el-icon>
         <ChatDotSquare />
       </el-icon>
@@ -37,14 +46,22 @@
 <script setup lang="ts">
 import 'element-plus/es/components/notification/style/css'
 import 'element-plus/es/components/scrollbar/style/css'
-import { ChatDotSquare, Position } from "@element-plus/icons-vue"
-// import axios from "axios";
+import { ChatDotSquare, Position } from "@element-plus/icons-vue";
+import { sendChatMsg } from "@/api/chat";
 import { ElNotification, ElScrollbar } from "element-plus/lib/components/index.js";
 import { trim } from "lodash";
 import { dayjs } from 'element-plus';
 import { EventSourcePolyfill } from 'event-source-polyfill';
 import userJpg from '../../assets/user.jpg';
 import rbtJpg from '../../assets/rbt.jpg';
+import useStore from "@/store";
+import { storeToRefs } from "pinia";
+const store = useStore();
+const { sideBarStore } = store;
+const { currentSelectedSideBarItem } = storeToRefs(sideBarStore);
+
+import { getChatHistory } from "@/api/chat";
+import { Session } from "@/utils/storage";
 // ** 用于解决TS 类型报错接口，后期应模块化优化 **
 interface TsObject {
   data?: any,
@@ -61,14 +78,95 @@ const props = defineProps({
 })
 const scrollbarRef = ref<InstanceType<typeof ElScrollbar>>()
 const innerRef = ref<HTMLDivElement>()
-const message = ref("")
-const messageList = ref<{ target: string, text: string, date: string }[]>([])
+const message = ref("");
+const assistantSwitch = ref(false);
+const isNewMsg = ref(true)
+const title = ref(props.apiKey === 'assistant' ? 'Your Copilot' : 'W o r d   T a l k')
+const messageList = ref<{ target: string, text: string, date: string }[]>([]);
 
 function formatText(text?: string) {
   return text?.replace(/\n/g, '<br />')
 }
 
+async function initMsgList(word) {
+  const query = {
+    bookId: currentSelectedSideBarItem.value.id,
+    robotId: props.apiKey === 'assistant' ? 2 : 1
+  }
+  getChatHistory(query).then(res => {
+    const list = res.data?.records || [];
+    const arr = [];
+    list.forEach(item => {
+      arr.push({
+        target: item.role,
+        text: item.content,
+        date: item.createTime,
+      })
+    })
+    messageList.value = arr;
+    // 消息置底
+    handleToBottom()
+
+    const token = Session.getToken();
+    if (props.apiKey === 'assistant') {
+      const servantSource = new EventSourcePolyfill('/dev-api/ai/servant/open', {
+        headers: {
+          Authorization: token ? `Bearer ${token}` : "",
+          'CLIENT-TOC': 'Y'
+        }
+      });
+      isNewMsg.value = true
+      servantSource.onmessage = (event) => {
+        handleToBottom()
+        pushMsg(event,isNewMsg.value);
+        isNewMsg.value = false
+      }
+      // servantSource.addEventListener('end',() => {servantSource.close()})
+    } else {
+      const masterSource = new EventSourcePolyfill('/dev-api/ai/master/open', {
+        headers: {
+          Authorization: token ? `Bearer ${token}` : "",
+          'CLIENT-TOC': 'Y'
+        }
+      });
+      isNewMsg.value = true
+      masterSource.onmessage = (event) => {
+        handleToBottom()
+        pushMsg(event,isNewMsg.value);
+        isNewMsg.value = false
+      }
+      if (props.apiKey === 'ask' && messageList.value.length === 0) { //初始只有主聊天需要自动发送一次对话
+        const param = {
+          bookId: currentSelectedSideBarItem.value.id,
+          message: '/start Use the AI as Simulator Tool*',
+          inject: word
+        }
+        sendChatMsg(param, 1)
+      }
+      //masterSource.addEventListener('end',() => {console.log('对话结束')})
+    }
+  });
+}
+// 消息插入
+async function pushMsg(e,isNew) {
+  if(isNew) {
+    messageList.value.push({
+      'target': 'rbt',
+      'text': e.data,
+      date: dayjs().format("YYYY-MM-DD H:mm:ss")
+    })
+  } else {
+    messageList.value.map((item,index) => {
+      if(index === messageList.value.length - 1) {
+        item.text = item.text + (e.data === "." ? '.' : ` ${e.data}`);
+        // item.text = item.text + e.data;
+      }
+    })
+  }
+}
+
 async function handleSend() {
+  isNewMsg.value = true //重置新消息
   if (!trim(message.value)) {
     ElNotification({
       title: 'Info',
@@ -82,78 +180,39 @@ async function handleSend() {
       text: message.value,
       date: dayjs().format("YYYY-MM-DD H:mm:ss")
     })
-    // assistant 接口
-    props.apiKey === 'assistant' ? getSource() : getMessageList()
+    props.apiKey === 'assistant' ? assistantChat() : masterChat('')
   }
 }
-async function getSource() {
+async function assistantChat() {
+  isNewMsg.value = true //重置新消息
   const val = message.value
   message.value = ''
-  let url = '/dev-api/assistant?assistant=' + encodeURIComponent(val)
-  var cSource = new EventSourcePolyfill(url, {
-    headers: {
-      token: localStorage.getItem('token')
-    }
-  })
-  let flag = true;
-  cSource.onmessage = (event: TsObject) => {
-    handleToBottom()
-    setMessageList(event,flag);
-    flag = false;
+  const query = {
+    bookId: currentSelectedSideBarItem.value.id,
+    message: val,
+    inject: null
   }
-  cSource.addEventListener("end", function () {
-    cSource.close();
-  });
+  await sendChatMsg(query, 2)
 }
-async function getMessageList() {
+async function masterChat(word) { // 主聊天对话机器人
+  isNewMsg.value = true //重置新消息
   const val = message.value
   let param = { ask: val };
-  message.value = ""
-  getMessage(param, 'chat'); // chat:对话区,assistant:助手区
+  message.value = "";
+  const query = {
+    bookId: currentSelectedSideBarItem.value.id,
+    message: word ? `Let’s start to learn the word ${word}*` : param.ask,
+    inject: null
+  }
+  sendChatMsg(query, 1)
   if (props.callback) {
     props.callback(param);
   }
   handleToBottom()
 }
 
-const getMessage = (param: TsObject, type: any) => {
-  const ask = encodeURIComponent(param.ask);
-  const urlConfig = {
-    chat: `/dev-api/ask1?ask=${ask}`,
-    assistant: `/dev-api/ask2?ask=${ask}`,
-  }
-  var askSource = new EventSourcePolyfill(urlConfig[type as string] || urlConfig['chat'], {
-    headers: {
-      token: localStorage.getItem('token')
-    }
-  })
-  let flag = true;
-  askSource.onmessage = (event:TsObject) => {
-    setMessageList(event,flag);
-    handleToBottom()
-    flag = false;
-  }
-  askSource.addEventListener("end", function () {
-    askSource.close();
-  });
-}
-
-
-
-const setMessageList = (res:TsObject,flag: any) => { // 将流式返回数据设置到messageList
-  if(flag) {
-    messageList.value.push({
-      'target': 'rbt',
-      'text': res.data,
-      date: dayjs().format("YYYY-MM-DD H:mm:ss")
-    })
-  } else {
-    messageList.value.map((item,index) => {
-      if(index === messageList.value.length - 1) {
-        item.text = item.text + res.data;
-      }
-    })
-  }
+const onSwitchChange = (val) => {
+  assistantSwitch.value = val;
 }
 
 function handleToBottom() {
@@ -168,17 +227,37 @@ defineExpose({
   clearMsgList: () => {
     messageList.value = []
   },
-  getMsgList: getMessageList,
-  updateMsgList: (param:TsObject) => {
-    if(param && param.ask) {// 初始或者输入框内容为空不调用助手检测
-      getMessage(param, 'assistant');
+  initMsgList: (word) => initMsgList(word), // 切换词书时调用
+  getMsgList: (word) => masterChat(word), // 切换单词时调用
+  updateMsgList: (param: TsObject) => {
+    isNewMsg.value = true
+    if (param && param.ask && assistantSwitch.value) {// 初始或者输入框内容为空不调用助手检测
+      const query = {
+        bookId: currentSelectedSideBarItem.value.id,
+        message: '开始纠错*',
+        inject: param.ask
+      }
+      sendChatMsg(query, 2)
     }
   }
 })
-
 </script>
 
 <style lang="scss" scoped>
+.chat-title {
+  font-size: 34px;
+  color: #fbfbfb;
+  font-weight: 500;
+  text-align: center;
+}
+
+.copilot-title {
+  font-size: 20px;
+  color: #000;
+  font-weight: 500;
+  text-align: center;
+}
+
 .chat-msg {
   &-profile {
     flex-shrink: 0;
@@ -189,6 +268,7 @@ defineExpose({
   &-img {
     height: 40px;
     width: 40px;
+    margin: 24px 24px 0 0;
     border-radius: 50%;
     object-fit: cover;
   }
@@ -196,10 +276,10 @@ defineExpose({
   &-date {
     position: absolute;
     left: calc(100% + 12px);
-    bottom: 0;
+    top: 0;
     font-size: 12px;
-    font-weight: 600;
-    color: #5f6066;
+    font-weight: 400;
+    color: #aaa;
     white-space: nowrap;
   }
 
@@ -212,15 +292,24 @@ defineExpose({
   }
 
   &-text {
-    margin-top: 15px;
-    background-color: #f1f2f6;
-    padding:6px 10px;
-    border-radius: 0 12px 12px 12px;
+    margin-top: 24px;
+    background-color: #fff;
+    padding: 6px 10px;
+    border-radius: 5px;
     line-height: 1.5;
     font-size: 14px;
     font-weight: 500;
     color: black;
+    border: 1px solid rgb(129, 211, 248);
+    word-break: break-word;
   }
+}
+
+.switchBtn {
+  display: flex;
+  justify-content: center;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #eee;
 }
 
 .owner {
@@ -237,10 +326,15 @@ defineExpose({
     align-items: flex-end;
   }
 
+  .chat-msg-img {
+    margin: 24px 0 0 24px;
+  }
+
   .chat-msg-text {
-    background-color: #0086ff;
-    color: #fff;
-    border-radius: 12px 0 12px 12px;
+    background-color: rgba(2, 167, 240, 0.5);
+    border-radius: 5px;
+    color: #333333;
+    border: none;
   }
 }
 </style>

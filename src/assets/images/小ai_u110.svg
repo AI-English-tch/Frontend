@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<svg version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" width="41px" height="42px" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient gradientUnits="userSpaceOnUse" x1="969.9999999999998" y1="983" x2="1000.9999999999998" y2="1009" id="LinearGradient942">
+      <stop id="Stop943" stop-color="#5ac9e4" offset="0" />
+      <stop id="Stop944" stop-color="#f2bcf0" offset="1" />
+    </linearGradient>
+    <filter x="966px" y="979px" width="41px" height="42px" filterUnits="userSpaceOnUse" id="filter945">
+      <feOffset dx="1" dy="1" in="SourceAlpha" result="shadowOffsetInner" />
+      <feGaussianBlur stdDeviation="2.5" in="shadowOffsetInner" result="shadowGaussian" />
+      <feComposite in2="shadowGaussian" operator="atop" in="SourceAlpha" result="shadowComposite" />
+      <feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.6980392156862745 0  " in="shadowComposite" />
+    </filter>
+    <g id="widget946">
+      <path d="M 985.5 983  C 994.18 983  1001 990.04  1001 999  C 1001 1007.96  994.18 1015  985.5 1015  C 976.82 1015  970 1007.96  970 999  C 970 990.04  976.82 983  985.5 983  Z " fill-rule="nonzero" fill="url(#LinearGradient942)" stroke="none" />
+      <path d="M 985.5 983.5  C 993.9 983.5  1000.5 990.32  1000.5 999  C 1000.5 1007.68  993.9 1014.5  985.5 1014.5  C 977.1 1014.5  970.5 1007.68  970.5 999  C 970.5 990.32  977.1 983.5  985.5 983.5  Z " stroke-width="1" stroke="#ffffff" fill="none" />
+    </g>
+  </defs>
+  <g transform="matrix(1 0 0 1 -966 -979 )">
+    <use xlink:href="#widget946" filter="url(#filter945)" />
+    <use xlink:href="#widget946" />
+  </g>
+</svg>

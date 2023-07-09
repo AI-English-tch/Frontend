@@ -1,80 +1,207 @@
 <template>
-  <div class="layout-main-side dark flex-shrink-0 overflow-x-hidden shadow h-full p-4" style="width: 260px;">
-    <div class="flex h-full min-h-0 flex-col">
-      <nav class=" p-2 flex flex-col w-full h-full">
-        <a
-          class="flex py-3 px-3 items-center gap-3 transition-colors duration-200 text-white cursor-pointer text-sm rounded-md border border-white/20 hover:bg-gray-500/10 mb-1 flex-shrink-0">
-          <el-icon>
-            <Plus />
-          </el-icon>
-          New Learn
-        </a>
+  <div class="layout-main-side dark flex-shrink-0 overflow-x-hidden shadow h-full self-rt" style="width: 260px;">
+    <div class="flex h-full min-h-0 flex-col ">
+      <nav class="flex flex-col w-full h-full ">
+        <div class="p-4">
+            <a
+            class="flex self-st py-3 px-3 items-center gap-3 transition-colors duration-200 text-white cursor-pointer text-sm rounded-md border border-white/20 hover:bg-gray-500/10 mb-1 flex-shrink-0">
+            Choose Words
+            <img src="../assets/images/choose-book.svg" class="book" alt="">
+            </a>
+        </div>
+
         <div class="flex flex-col flex-1  overflow-y-auto">
           <div class="flex flex-col gap-2 pb-2 text-gray-100 text-sm">
             <div>
               <div class="relative">
-                <div class="sticky top-0 z-[16]">
-                  <h3
-                    class="h-9 pb-2 pt-3 px-3 text-xs text-gray-500 font-medium text-ellipsis overflow-hidden break-all bg-transparent">
-                    Today
-                  </h3>
+                <div class="sticky top-0 z-[16] mb-4 pr-4 pl-4">
+                  <div class="line"></div>
                 </div>
                 <ol>
-                  <li class="relative">
-                    <a @mouseenter="visible = true" @mouseleave="visible = false"
-                      class="flex py-3 px-3 items-center gap-3 relative rounded-md hover:bg-[#2A2B32] cursor-pointer break-all !hover:pr-4 bg-transparent group transition-colors group">
-                      <el-icon>
-                        <ChatSquare />
-                      </el-icon>
-                      <div class="flex-1 text-ellipsis max-h-5 overflow-hidden break-all relative">
-                        CET-6
-                      </div>
-                      <div class="absolute flex right-2 space-x-2 z-10 text-gray-300" v-show="visible">
-                        <el-icon class="transition-colors hover:text-white">
-                          <EditPen />
-                        </el-icon>
-                        <el-icon class="transition-colors hover:text-white">
-                          <Delete />
-                        </el-icon>
-                      </div>
-                    </a>
-                  </li>
+                    <template v-for="(item) in customerBookList" :key="item.id">
+                        <li class="relative border mb-3 mr-1 ml-1">
+                            <a @click="changeBook(item)"
+                            class="flex py-3 px-3 items-center justify-center gap-3 relative rounded-md hover:bg-[#2A2B32] cursor-pointer break-all !hover:pr-4 bg-transparent group transition-colors group">
+                            <div class="flex-1 align-center text-ellipsis max-h-5 overflow-hidden break-all relative" >
+                                {{item.text}}
+                            </div>
+                            </a>
+                        </li>
+                    </template>
                 </ol>
               </div>
             </div>
           </div>
         </div>
         <div>
+          <div class="flex justify-center mb-16">
+            <el-button @click="openAddBookBox">新增词书</el-button>
+          </div>
           <div class="flex justify-between mb-4">
-            <el-button :icon="User">关于</el-button>
-            <el-button :icon="Document">教程</el-button>
+            <el-button :icon="User" class="ml-4">关于</el-button>
+            <el-button :icon="Document" class="mr-4">教程</el-button>
           </div>
           <div class="border-t border-white/20 pt-2">
             <div class="group relative">
-              <button
-                class="flex w-full items-center gap-2.5 rounded-md px-3 py-3 text-sm transition-colors duration-200 hover:bg-gray-800 group-ui-open:bg-gray-800">
+              <div
+                class="flex w-full items-center gap-2.5 rounded-md px-3 py-3 text-sm transition-colors duration-200 group-ui-open:bg-gray-800">
                 <el-avatar shape="square" class="-ml-0.5 w-5 flex-shrink-0" :size="20">A</el-avatar>
                 <div class=" overflow-hidden text-ellipsis whitespace-nowrap text-left text-white" style="flex-grow: 1;">
-                  Admin
+                  {{userName}}
                 </div>
-                <el-icon class="h-4 w-4 flex-shrink-0 !text-gray-500">
-                  <More />
-                </el-icon>
-              </button>
+                <button>
+                  <el-icon @click="showWrapContent = !showWrapContent" class="relative h-4 w-4 flex-shrink-0 !text-gray-500">
+                    <More />
+                  </el-icon>
+                </button>
+                <button v-if="showWrapContent" @click="userLogout" class="wrapBox">退出登陆</button>
+              </div>
             </div>
           </div>
         </div>
       </nav>
     </div>
   </div>
+  <el-dialog v-model="dialogVisible" :before-close="handleCancel" title="新增词书">
+    <el-form :model="form">
+      <el-form-item label="词书名称" :label-width="formLabelWidth">
+        <el-input v-model="form.name" autocomplete="off" />
+      </el-form-item>
+      <el-form-item label="选择词库" :label-width="formLabelWidth">
+        <el-select v-model="form.region" placeholder="请选择词库">
+          <template v-for="(item) in bookSelectList">
+            <el-option :label="item.label" :value="item.value" />
+          </template>
+        </el-select>
+      </el-form-item>
+    </el-form>
+    <template #footer>
+      <span class="dialog-footer">
+        <el-button @click="handleCancel">取消</el-button>
+        <el-button type="primary" @click="handleOk">
+          确定
+        </el-button>
+      </span>
+    </template>
+  </el-dialog>
 </template>
 <script setup lang="ts">
-const visible = ref(false)
-import { Plus, ChatSquare, EditPen, Delete, More, User, Document } from "@element-plus/icons-vue"
+import useStore from "@/store/index"
+import { addByStore,fetchList,fetchPublicBookList } from "@/api/book";
+import {getUserInfo} from "@/api/public/user";
+import { useMessage } from '@/hooks/message';
+import { More, User, Document } from "@element-plus/icons-vue"
+import { Session } from "@/utils/storage";
+const router = useRouter();
+const store = useStore()
+const userId = Session.get('user_id')
+const { sideBarStore } = store;
+const dialogVisible = ref(false);
+const showWrapContent = ref(false);
+const form = ref({});
+const customerBookList = ref([]);
+const bookSelectList = ref([]);
+const userName = ref('');
+const formLabelWidth = '140px';
+
+onMounted(() => {
+  getCurrentUserInfo()
+  loadUserBook()
+})
+
+const getCurrentUserInfo = () => {
+  getUserInfo().then(res => {
+    userName.value = res.data?.appUser?.username || '';
+  })
+}
+// 获取用户词书
+const loadUserBook = () => {
+  fetchList({}).then(res => {
+    const arr = [];
+    res.data.forEach((item) => {
+      arr.push({
+        text: item.name,
+        id: item.id,
+      })
+    })
+    customerBookList.value = arr;
+    // sideBarStore.handleChangeSide(customerBookList.value[0]); // 用户自己的词书初始默认选中第一个
+  }).catch((err: any) => {
+    useMessage().error(err.msg)
+  })
+}
+
+const changeBook = (current) => { //切换词书
+  sideBarStore.handleChangeSide(current); //将用户当前选中的词书存入全局变量
+}
+
+const openAddBookBox = () => {
+  dialogVisible.value = true;
+  fetchPublicBookList({}).then(res => {
+    const arr = [];
+    res.data.forEach((item) => {
+      arr.push({
+        label: item.name,
+        value: item.id,
+      })
+    })
+    bookSelectList.value = arr;
+  })
+}
+
+const handleOk = () => {
+  const data = {
+    storeId: form.value.region,
+    name:form.value.name,
+  };
+  addByStore(data).then(res => {
+    useMessage().success('添加成功');
+    loadUserBook() // 刷新用户自己的词书列表
+  })
+  dialogVisible.value = false;
+}
+
+const handleCancel = () => {
+  // form.value = {};
+  dialogVisible.value = false;
+}
+
+const userLogout = () => { // TODO 退出登陆
+  router.push('/login');
+}
+
 </script>
 <style lang="scss">
 .layout-main-side {
-
   background: linear-gradient(151.64103655387deg, rgba(0, 0, 0, 1) 18%, rgba(0, 40, 77, 1) 58%);
+  border-radius: 19px 19px 0 0;
+  .self-st {
+    background-color: #02294c;
+    position: relative;
+    .book {
+        width: 40px;
+        position: absolute;
+        right: 0;
+    }
+  }
+  .line{
+    width: 100%;
+    height: 0;
+    border-bottom: 1px solid rgba(243, 243, 243, 0.7058823529411765);
+  }
+  .border{
+    border: 1px solid rgba(243, 243, 243, 0.7058823529411765);
+    border-radius: 4px;
+    text-align: center;
+  }
+  .wrapBox {
+    position: absolute;
+    background-color: #fff;
+    top: -22px;
+    right: 16px;
+    line-height: 18px;
+    padding: 6px 12px;
+    border-radius: 4px;
+  }
 }
 </style>
