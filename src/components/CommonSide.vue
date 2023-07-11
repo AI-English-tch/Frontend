@@ -20,6 +20,7 @@
                 <ol>
                     <template v-for="(item) in customerBookList" :key="item.id">
                         <li class="relative border mb-3 mr-1 ml-1">
+                            <div class="del-book-btn" @click="openDelBookBox(item)"><el-icon><CloseBold /></el-icon></div>
                             <a @click="changeBook(item)"
                             class="flex py-3 px-3 items-center justify-center gap-3 relative rounded-md hover:bg-[#2A2B32] cursor-pointer break-all !hover:pr-4 bg-transparent group transition-colors group">
                             <div class="flex-1 align-center text-ellipsis max-h-5 overflow-hidden break-all relative" >
@@ -62,7 +63,8 @@
       </nav>
     </div>
   </div>
-  <el-dialog v-model="dialogVisible" :before-close="handleCancel" title="新增词书">
+  <!--  新增词书确认框-->
+  <el-dialog v-model="addBoxVisible" :before-close="addBoxOnCancel" title="新增词书">
     <el-form :model="form">
       <el-form-item label="词书名称" :label-width="formLabelWidth">
         <el-input v-model="form.name" autocomplete="off" />
@@ -77,8 +79,22 @@
     </el-form>
     <template #footer>
       <span class="dialog-footer">
-        <el-button @click="handleCancel">取消</el-button>
-        <el-button type="primary" @click="handleOk">
+        <el-button @click="addBoxOnCancel">取消</el-button>
+        <el-button type="primary" @click="addBoxOnOk">
+          确定
+        </el-button>
+      </span>
+    </template>
+  </el-dialog>
+<!--  删除词书确认框-->
+  <el-dialog v-model="delBoxVisible" :before-close="delBoxOnCancel" title="删除词书">
+    <span class="dialog-footer">
+      确认删除当前词书吗
+    </span>
+    <template #footer>
+      <span class="dialog-footer">
+        <el-button @click="delBoxOnCancel">取消</el-button>
+        <el-button type="primary" @click="delBoxOnOk">
           确定
         </el-button>
       </span>
@@ -87,36 +103,36 @@
 </template>
 <script setup lang="ts">
 import useStore from "@/store/index"
-import { addByStore,fetchList,fetchPublicBookList } from "@/api/book";
+import { addByStore,fetchList,fetchPublicBookList, delObjs } from "@/api/book";
 import {getUserInfo} from "@/api/public/user";
 import { useMessage } from '@/hooks/message';
 import { More, User, Document } from "@element-plus/icons-vue"
 import { Session } from "@/utils/storage";
+import { CloseBold } from "@element-plus/icons-vue";
 const router = useRouter();
-const store = useStore()
+const store = useStore();
 const userId = Session.get('user_id')
 const { sideBarStore } = store;
-const dialogVisible = ref(false);
+const addBoxVisible = ref(false);
+const delBoxVisible = ref(false);
 const showWrapContent = ref(false);
 const form = ref({});
 const customerBookList = ref([]);
 const bookSelectList = ref([]);
 const userName = ref('');
+const delBookIds = ref([]);
 const formLabelWidth = '140px';
 
-onMounted(() => {
-  getCurrentUserInfo()
-  loadUserBook()
+onMounted(async () => {
+  const res = await getUserInfo();
+  const val = res.data?.appUser?.username || '';
+  userName.value = val
+  await loadUserBook(val)
 })
 
-const getCurrentUserInfo = () => {
-  getUserInfo().then(res => {
-    userName.value = res.data?.appUser?.username || '';
-  })
-}
 // 获取用户词书
-const loadUserBook = () => {
-  fetchList({}).then(res => {
+const loadUserBook = (username) => {
+  fetchList({createBy: username}).then(res => {
     const arr = [];
     res.data.forEach((item) => {
       arr.push({
@@ -136,7 +152,7 @@ const changeBook = (current) => { //切换词书
 }
 
 const openAddBookBox = () => {
-  dialogVisible.value = true;
+  addBoxVisible.value = true;
   fetchPublicBookList({}).then(res => {
     const arr = [];
     res.data.forEach((item) => {
@@ -149,21 +165,37 @@ const openAddBookBox = () => {
   })
 }
 
-const handleOk = () => {
+const openDelBookBox = (current) => {
+  delBookIds.value = [current.id];
+  delBoxVisible.value = true;
+}
+
+const addBoxOnOk = () => {
   const data = {
     storeId: form.value.region,
     name:form.value.name,
   };
   addByStore(data).then(res => {
     useMessage().success('添加成功');
-    loadUserBook() // 刷新用户自己的词书列表
+    loadUserBook(userName.value) // 刷新用户自己的词书列表
   })
-  dialogVisible.value = false;
+  addBoxVisible.value = false;
 }
 
-const handleCancel = () => {
-  // form.value = {};
-  dialogVisible.value = false;
+const addBoxOnCancel = () => {
+  addBoxVisible.value = false;
+}
+
+const delBoxOnOk = () => {
+  delObjs(delBookIds.value).then(res => {
+    useMessage().success('删除成功');
+    loadUserBook(userName.value) // 刷新用户自己的词书列表
+  })
+  delBoxVisible.value = false;
+}
+
+const delBoxOnCancel = () => {
+  delBoxVisible.value = false;
 }
 
 const userLogout = () => { // TODO 退出登陆
@@ -193,6 +225,20 @@ const userLogout = () => { // TODO 退出登陆
     border: 1px solid rgba(243, 243, 243, 0.7058823529411765);
     border-radius: 4px;
     text-align: center;
+    position: relative;
+    &:hover {
+      .del-book-btn {
+        display: block;
+      }
+    }
+  }
+  .del-book-btn {
+    display: none;
+    position: absolute;
+    top: 2px;
+    right: 4px;
+    z-index: 3;
+    cursor: pointer;
   }
   .wrapBox {
     position: absolute;

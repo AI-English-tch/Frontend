@@ -132,8 +132,12 @@ const handleChangeWord = (current) => { // 点击单词，对应的单词设置�
   })
 };
 
-const handleCallback = (param:any) => {
-  ChatRoom2Ref.value?.updateMsgList(param);
+const handleCallback = (param:any,type:string) => {
+  if(type === 'eventsource') {
+    ChatRoom2Ref.value?.setMsgList(param);
+  } else {
+    ChatRoom2Ref.value?.updateMsgList(param);
+  }
 };
 </script>
 

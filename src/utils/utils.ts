@@ -181,11 +181,13 @@ export function encryption(params: any) {
 		param.forEach((ele: any) => {
 			var data = result[ele];
 			// 加密
-			let key = md5(data)
-			// var encrypted = CryptoJS.AES.encrypt(data, {
-			// 	mode: CryptoJS.mode.CFB,
-			// 	padding: CryptoJS.pad.NoPadding,
-			// });
+			// let key = md5(data)
+			let encryptKey = CryptoJS.enc.Latin1.parse('wordtalkwordtalk')
+			let key= CryptoJS.AES.encrypt(data,encryptKey, {
+				iv: encryptKey,
+				mode: CryptoJS.mode.CFB,
+				padding: CryptoJS.pad.NoPadding,
+			});
 			result[ele] = key.toString();
 		});
 	}

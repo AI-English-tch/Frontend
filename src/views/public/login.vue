@@ -48,8 +48,8 @@ const state = reactive({
 	isShowPassword: false, // 是否显示密码
 	ruleForm: {
 		// 表单数据
-		username: 'appuser', // 用户名
-		password: 'JFat0Zdc', // 密码
+		username: '', // 用户名
+		password: '', // 密码
 	},
 });
 

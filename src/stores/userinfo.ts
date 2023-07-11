@@ -36,8 +36,9 @@ export const useUserInfo = defineStore('userInfo', {
 				param: ['password'],
 			});
 
+
 			return new Promise((resolve, reject) => {
-				login(data)
+				login(user)
 					.then((res) => {
 						// 存储token 信息
 						const data = res || {};

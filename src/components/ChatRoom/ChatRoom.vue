@@ -45,7 +45,8 @@
 </template>
 <script setup lang="ts">
 import 'element-plus/es/components/notification/style/css'
-import 'element-plus/es/components/scrollbar/style/css'
+import 'element-plus/es/components/scrollbar/style/css';
+import { onBeforeUnmount } from "vue";
 import { ChatDotSquare, Position } from "@element-plus/icons-vue";
 import { sendChatMsg } from "@/api/chat";
 import { ElNotification, ElScrollbar } from "element-plus/lib/components/index.js";
@@ -80,13 +81,24 @@ const scrollbarRef = ref<InstanceType<typeof ElScrollbar>>()
 const innerRef = ref<HTMLDivElement>()
 const message = ref("");
 const assistantSwitch = ref(false);
-const isNewMsg = ref(true)
+const isNewMsg = ref(true);
+const allowSend = ref(true); //初始允许发送对话请求
 const title = ref(props.apiKey === 'assistant' ? 'Your Copilot' : 'W o r d   T a l k')
 const messageList = ref<{ target: string, text: string, date: string }[]>([]);
 
 function formatText(text?: string) {
   return text?.replace(/\n/g, '<br />')
 }
+
+let masterSource = '';
+
+onBeforeUnmount(() => {
+  masterSource.close();
+})
+
+window.addEventListener('beforeunload',() => {
+  masterSource.close();
+})
 
 async function initMsgList(word) {
   const query = {
@@ -108,22 +120,8 @@ async function initMsgList(word) {
     handleToBottom()
 
     const token = Session.getToken();
-    if (props.apiKey === 'assistant') {
-      const servantSource = new EventSourcePolyfill('/dev-api/ai/servant/open', {
-        headers: {
-          Authorization: token ? `Bearer ${token}` : "",
-          'CLIENT-TOC': 'Y'
-        }
-      });
-      isNewMsg.value = true
-      servantSource.onmessage = (event) => {
-        handleToBottom()
-        pushMsg(event,isNewMsg.value);
-        isNewMsg.value = false
-      }
-      // servantSource.addEventListener('end',() => {servantSource.close()})
-    } else {
-      const masterSource = new EventSourcePolyfill('/dev-api/ai/master/open', {
+    if(props.apiKey === 'ask') {
+      masterSource = new EventSourcePolyfill('/dev-api/ai/sse/open', {
         headers: {
           Authorization: token ? `Bearer ${token}` : "",
           'CLIENT-TOC': 'Y'
@@ -132,18 +130,21 @@ async function initMsgList(word) {
       isNewMsg.value = true
       masterSource.onmessage = (event) => {
         handleToBottom()
-        pushMsg(event,isNewMsg.value);
-        isNewMsg.value = false
+        if (props.callback && event.event === 'servant') { // TODO 具体参数待确定
+          props.callback(event.data);
+        } else {
+          pushMsg(event.data,isNewMsg.value);
+          isNewMsg.value = false
+        }
       }
-      if (props.apiKey === 'ask' && messageList.value.length === 0) { //初始只有主聊天需要自动发送一次对话
+      if (props.apiKey === 'ask') { //初始只有主聊天需要自动发送一次对话
         const param = {
           bookId: currentSelectedSideBarItem.value.id,
           message: '/start Use the AI as Simulator Tool*',
-          inject: word
+          word: word
         }
-        sendChatMsg(param, 1)
+        chatMsgControl(param, 1)
       }
-      //masterSource.addEventListener('end',() => {console.log('对话结束')})
     }
   });
 }
@@ -174,6 +175,12 @@ async function handleSend() {
       type: 'info',
     })
     message.value = ""
+  } else if(!allowSend.value) {
+    ElNotification({
+      title: 'Info',
+      message: '等机器人回答后再发送',
+      type: 'info',
+    })
   } else {
     messageList.value.push({
       target: 'user',
@@ -182,6 +189,7 @@ async function handleSend() {
     })
     props.apiKey === 'assistant' ? assistantChat() : masterChat('')
   }
+  allowSend.value = false;
 }
 async function assistantChat() {
   isNewMsg.value = true //重置新消息
@@ -192,7 +200,7 @@ async function assistantChat() {
     message: val,
     inject: null
   }
-  await sendChatMsg(query, 2)
+  chatMsgControl(query, 2)
 }
 async function masterChat(word) { // 主聊天对话机器人
   isNewMsg.value = true //重置新消息
@@ -204,11 +212,17 @@ async function masterChat(word) { // 主聊天对话机器人
     message: word ? `Let’s start to learn the word ${word}*` : param.ask,
     inject: null
   }
-  sendChatMsg(query, 1)
+  chatMsgControl(query, 1)
   if (props.callback) {
     props.callback(param);
   }
   handleToBottom()
+}
+
+const chatMsgControl = (query,id) => {
+  sendChatMsg(query, id).then(() => {
+    allowSend.value = true;
+  })
 }
 
 const onSwitchChange = (val) => {
@@ -227,6 +241,10 @@ defineExpose({
   clearMsgList: () => {
     messageList.value = []
   },
+  setMsgList: (data) => { // 将主聊天框的纠错流式数据同步过来
+    isNewMsg.value = false;
+    pushMsg(data,isNewMsg.value);
+  },
   initMsgList: (word) => initMsgList(word), // 切换词书时调用
   getMsgList: (word) => masterChat(word), // 切换单词时调用
   updateMsgList: (param: TsObject) => {
@@ -237,7 +255,7 @@ defineExpose({
         message: '开始纠错*',
         inject: param.ask
       }
-      sendChatMsg(query, 2)
+      chatMsgControl(query, 2)
     }
   }
 })
