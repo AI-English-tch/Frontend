@@ -12,6 +12,7 @@
       <div v-if="currentSelectedSideBarItem" class="bg-white p-4 w-full flex-1 overflow-auto word-content">
         <div class="book-name">正在阅览：{{currentSelectedSideBarItem?.text || ''}}</div>
         <div class="mb-1 current-word">{{currentWord}}</div>
+        <div @click="speakWord">发音</div>
         <div class="flex justify-around mb-3 operate-box">
           <el-button @click="nextWord" class="operate-item" type="primary">掌握</el-button>
           <el-button @click="nextWord" class="operate-item" type="primary">认识</el-button>
@@ -115,6 +116,11 @@ const nextWord = () => { // 下一个单词
     wordList.value.push(...result);
   })
 }
+const synth = window.speechSynthesis;
+const msg = new SpeechSynthesisUtterance();
+const speakWord = () => {
+  msg.text = currentWord.value;
+};
 
 const handleChangeWord = (current) => { // 点击单词，对应的单词设置为当前单词，同时抽取一个单词
   currentWord.value = current.word;
@@ -136,7 +142,7 @@ const handleCallback = (param:any,type:string) => {
   if(type === 'eventsource') {
     ChatRoom2Ref.value?.setMsgList(param);
   } else {
-    ChatRoom2Ref.value?.updateMsgList(param);
+    ChatRoom2Ref.value?.updateMsgList(param,currentWord.value);
   }
 };
 </script>

@@ -63,11 +63,7 @@ const { currentSelectedSideBarItem } = storeToRefs(sideBarStore);
 
 import { getChatHistory } from "@/api/chat";
 import { Session } from "@/utils/storage";
-// ** 用于解决TS 类型报错接口，后期应模块化优化 **
-interface TsObject {
-  data?: any,
-  ask?: string
-}
+import {all} from "axios";
 
 const props = defineProps({
   apiKey: {
@@ -116,40 +112,45 @@ async function initMsgList(word) {
       })
     })
     messageList.value = arr;
-    // 消息置底
-    handleToBottom()
-
     const token = Session.getToken();
     if(props.apiKey === 'ask') {
       masterSource = new EventSourcePolyfill('/dev-api/ai/sse/open', {
         headers: {
           Authorization: token ? `Bearer ${token}` : "",
-          'CLIENT-TOC': 'Y'
+          'CLIENT-TOC': 'Y',
         }
       });
       isNewMsg.value = true
-      masterSource.onmessage = (event) => {
-        handleToBottom()
-        if (props.callback && event.event === 'servant') { // TODO 具体参数待确定
-          props.callback(event.data);
-        } else {
-          pushMsg(event.data,isNewMsg.value);
-          isNewMsg.value = false
+      masterSource.addEventListener('master',function (event) {
+        pushMsg(event,isNewMsg.value);
+        isNewMsg.value = false
+      });
+
+      masterSource.addEventListener('servant',function (event) {
+        if(props.callback) {
+          props.callback(event,'eventsource');
         }
-      }
-      if (props.apiKey === 'ask') { //初始只有主聊天需要自动发送一次对话
+      });
+      if (props.apiKey === 'ask' && !arr.length) { //初始只有主聊天需要自动发送一次对话
         const param = {
           bookId: currentSelectedSideBarItem.value.id,
           message: '/start Use the AI as Simulator Tool*',
           word: word
         }
+        param['inject.key.key'] = param.word;
         chatMsgControl(param, 1)
       }
     }
+    // 消息置底
+    handleToBottom()
   });
 }
 // 消息插入
 async function pushMsg(e,isNew) {
+  if(e.type === 'servant') {
+    console.log(e,isNew)
+  }
+  handleToBottom()
   if(isNew) {
     messageList.value.push({
       'target': 'rbt',
@@ -167,7 +168,6 @@ async function pushMsg(e,isNew) {
 }
 
 async function handleSend() {
-  isNewMsg.value = true //重置新消息
   if (!trim(message.value)) {
     ElNotification({
       title: 'Info',
@@ -182,6 +182,7 @@ async function handleSend() {
       type: 'info',
     })
   } else {
+    isNewMsg.value = true //重置新消息
     messageList.value.push({
       target: 'user',
       text: message.value,
@@ -242,19 +243,22 @@ defineExpose({
     messageList.value = []
   },
   setMsgList: (data) => { // 将主聊天框的纠错流式数据同步过来
-    isNewMsg.value = false;
     pushMsg(data,isNewMsg.value);
+    isNewMsg.value = false;
   },
   initMsgList: (word) => initMsgList(word), // 切换词书时调用
-  getMsgList: (word) => masterChat(word), // 切换单词时调用
-  updateMsgList: (param: TsObject) => {
+  getMsgList: (word) => {// 切换单词时调用
+    masterChat(word)
+  },
+  updateMsgList: (param,word) => {
     isNewMsg.value = true
     if (param && param.ask && assistantSwitch.value) {// 初始或者输入框内容为空不调用助手检测
       const query = {
         bookId: currentSelectedSideBarItem.value.id,
         message: '开始纠错*',
-        inject: param.ask
+        word
       }
+      query['inject.key.key'] = param.ask;
       chatMsgControl(query, 2)
     }
   }
