@@ -109,10 +109,11 @@ import { useMessage } from '@/hooks/message';
 import { More, User, Document } from "@element-plus/icons-vue"
 import { Session } from "@/utils/storage";
 import { CloseBold } from "@element-plus/icons-vue";
+import {storeToRefs} from "pinia";
 const router = useRouter();
 const store = useStore();
-const userId = Session.get('user_id')
 const { sideBarStore } = store;
+const { currentSelectedSideBarItem } = storeToRefs(sideBarStore)
 const addBoxVisible = ref(false);
 const delBoxVisible = ref(false);
 const showWrapContent = ref(false);
@@ -190,6 +191,9 @@ const delBoxOnOk = () => {
   delObjs(delBookIds.value).then(res => {
     useMessage().success('删除成功');
     loadUserBook(userName.value) // 刷新用户自己的词书列表
+    if(delBookIds.value[0] === currentSelectedSideBarItem.value.id) {
+      sideBarStore.handleChangeSide(''); //当前选中词书被删除时将全局变量置空
+    }
   })
   delBoxVisible.value = false;
 }

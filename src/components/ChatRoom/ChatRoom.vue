@@ -63,7 +63,6 @@ const { currentSelectedSideBarItem } = storeToRefs(sideBarStore);
 
 import { getChatHistory } from "@/api/chat";
 import { Session } from "@/utils/storage";
-import {all} from "axios";
 
 const props = defineProps({
   apiKey: {
@@ -99,14 +98,15 @@ window.addEventListener('beforeunload',() => {
 async function initMsgList(word) {
   const query = {
     bookId: currentSelectedSideBarItem.value.id,
-    robotId: props.apiKey === 'assistant' ? 2 : 1
+    robotId: props.apiKey === 'assistant' ? 2 : 1,
+    word,
   }
   getChatHistory(query).then(res => {
     const list = res.data?.records || [];
     const arr = [];
     list.forEach(item => {
       arr.push({
-        target: item.role,
+        target: item.role === 'assistant' ? 'rbt' : 'user',
         text: item.content,
         date: item.createTime,
       })
@@ -117,11 +117,12 @@ async function initMsgList(word) {
       masterSource = new EventSourcePolyfill('/dev-api/ai/sse/open', {
         headers: {
           Authorization: token ? `Bearer ${token}` : "",
-          'CLIENT-TOC': 'Y',
+          'CLIENT-TOC': 'Y'
         }
       });
       isNewMsg.value = true
       masterSource.addEventListener('master',function (event) {
+        console.log(event,'master')
         pushMsg(event,isNewMsg.value);
         isNewMsg.value = false
       });
@@ -135,9 +136,9 @@ async function initMsgList(word) {
         const param = {
           bookId: currentSelectedSideBarItem.value.id,
           message: '/start Use the AI as Simulator Tool*',
-          word: word
+          word: word,
+          inject: {"word":word}
         }
-        param['inject.key.key'] = param.word;
         chatMsgControl(param, 1)
       }
     }
@@ -147,9 +148,6 @@ async function initMsgList(word) {
 }
 // 消息插入
 async function pushMsg(e,isNew) {
-  if(e.type === 'servant') {
-    console.log(e,isNew)
-  }
   handleToBottom()
   if(isNew) {
     messageList.value.push({
@@ -161,7 +159,7 @@ async function pushMsg(e,isNew) {
     messageList.value.map((item,index) => {
       if(index === messageList.value.length - 1) {
         item.text = item.text + (e.data === "." ? '.' : ` ${e.data}`);
-        // item.text = item.text + e.data;
+        //item.text = item.text + e.data;
       }
     })
   }
@@ -223,6 +221,9 @@ async function masterChat(word) { // 主聊天对话机器人
 const chatMsgControl = (query,id) => {
   sendChatMsg(query, id).then(() => {
     allowSend.value = true;
+  }).catch((err) => {
+    console.log('对话出错');
+    allowSend.value = true;
   })
 }
 
@@ -256,9 +257,9 @@ defineExpose({
       const query = {
         bookId: currentSelectedSideBarItem.value.id,
         message: '开始纠错*',
-        word
+        word,
+        inject:{"sentence":param.ask},
       }
-      query['inject.key.key'] = param.ask;
       chatMsgControl(query, 2)
     }
   }

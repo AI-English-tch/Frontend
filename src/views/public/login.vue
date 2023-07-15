@@ -73,7 +73,7 @@ const onSignIn = async () => {
 const signInSuccess = async () => {
     // 初始化登录成功时间问候语
     let currentTimeInfo = formatAxis(new Date());
-    router.push('/');
+    router.push('/home');
     // 登录成功提示
     const signInText = '登录成功';
     useMessage().success(`${currentTimeInfo}，${signInText}`);

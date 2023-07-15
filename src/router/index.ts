@@ -5,7 +5,12 @@ export const router = createRouter({
   history: createWebHashHistory(),
   routes: [
     {
-      path: '/',
+      path:'/',
+      name:'login',
+      component: () => import('../views/public/login.vue')
+    },
+    {
+      path: '/home',
       name: 'layout',
       component: BaseLayout,
       children: [
@@ -16,11 +21,7 @@ export const router = createRouter({
         },
       ],
     },
-    {
-      path:'/login',
-      name:'login',
-      component: () => import('../views/public/login.vue') 
-    }
+
   ],
 });
 

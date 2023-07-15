@@ -12,7 +12,7 @@
       <div v-if="currentSelectedSideBarItem" class="bg-white p-4 w-full flex-1 overflow-auto word-content">
         <div class="book-name">正在阅览：{{currentSelectedSideBarItem?.text || ''}}</div>
         <div class="mb-1 current-word">{{currentWord}}</div>
-        <div @click="speakWord">发音</div>
+        <div class="speak-btn" @click="speakWord"><img src="src/assets/images/play.svg" />单词发音</div>
         <div class="flex justify-around mb-3 operate-box">
           <el-button @click="nextWord" class="operate-item" type="primary">掌握</el-button>
           <el-button @click="nextWord" class="operate-item" type="primary">认识</el-button>
@@ -20,13 +20,17 @@
         </div>
         <!-- 单词 -->
         <div class="word-box flex justify-start">
-          <el-button
-              v-for="(item) in wordList"
-              :key="item.id"
-              text
-              bg
-              @click="handleChangeWord(item)"
-          >{{ item.word }}<span @click="clearWord(item)" class="close-icon"><el-icon><CloseBold /></el-icon></span></el-button>
+          <el-row justify="center">
+            <el-col
+                span="6"
+                class="word"
+                v-for="(item) in wordList"
+                :key="item.id"
+                text
+                bg
+                @click="handleChangeWord(item)"
+            >{{ item.word }}<span @click="clearWord(item)" class="close-icon"><el-icon><CloseBold /></el-icon></span></el-col>
+          </el-row>
         </div>
       </div>
       <div v-else class="bg-white p-4 w-full flex-1 word-content no-book">
@@ -51,8 +55,8 @@
 import { extractWords } from "@/api/word";
 import ChatRoom from '../components/ChatRoom/ChatRoom.vue';
 import { CloseBold } from "@element-plus/icons-vue";
-import useStore from "@/store/index"
-import { storeToRefs } from 'pinia'
+import useStore from "@/store/index";
+import { storeToRefs } from 'pinia';
 
 const store = useStore()
 
@@ -116,10 +120,15 @@ const nextWord = () => { // 下一个单词
     wordList.value.push(...result);
   })
 }
-const synth = window.speechSynthesis;
-const msg = new SpeechSynthesisUtterance();
 const speakWord = () => {
+  const msg = new SpeechSynthesisUtterance();
+  const speech = window.speechSynthesis;
   msg.text = currentWord.value;
+  msg.pitch = 1;
+  msg.rate = 0.5;
+  msg.volume = 10;
+  msg.lang = 'en';
+  speech.speak(msg);
 };
 
 const handleChangeWord = (current) => { // 点击单词，对应的单词设置为当前单词，同时抽取一个单词
@@ -180,23 +189,24 @@ const handleCallback = (param:any,type:string) => {
 }
 .right-box{
   background-color: rgba(255, 255, 255, 0.9764705882352941);
-  width: 30%;
-  min-width: 300px;
+  width: 384px;
   border-radius: 20px;
   border: 1px solid rgba(121, 121, 121, 1);
 }
 .word-box{
   flex-wrap: wrap;
-  .el-button{
-    border-radius: 10px;
-    background-color: #ccc!important;
-    margin: 8px;
-    height: 46px;
-    min-width: 80px;
+  .word{
+    border-radius: 6px;
+    background-color: #e1e1e1!important;
+    margin: 4px;
+    text-align: center;
+    height: 36px;
+    line-height: 36px;
+    width: 144px;
     position: relative;
     .close-icon {
       position: absolute;
-      top: 2px;
+      top: -6px;
       right: 2px;
       display: none;
       border-radius: 50%;
@@ -216,6 +226,17 @@ const handleCallback = (param:any,type:string) => {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.speak-btn {
+  height: 32px;
+  text-align: center;
+  cursor: pointer;
+  img {
+    display: inline-block;
+    margin-right: 4px;
+    margin-bottom: 4px;
+  }
 }
 
 </style>
