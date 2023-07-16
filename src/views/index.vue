@@ -24,12 +24,12 @@
             <el-col
                 span="6"
                 class="word"
-                v-for="(item) in wordList"
+                v-for="(item) in wordList.slice(1, wordList.length)"
                 :key="item.id"
                 text
                 bg
                 @click="handleChangeWord(item)"
-            >{{ item.word }}<span @click="clearWord(item)" class="close-icon"><el-icon><CloseBold /></el-icon></span></el-col>
+            >{{ item.word }}<span @click="(e) => clearWord(e,item)" class="close-icon"><el-icon><CloseBold /></el-icon></span></el-col>
           </el-row>
         </div>
       </div>
@@ -77,19 +77,19 @@ watch(currentSelectedSideBarItem, (newValue)=>{ // 切换词书
       });
       newValue.words = result;
       sideBarStore.handleChangeSide(newValue);
-      const words = [...result];
-      const firstWord = words.pop()?.word || '';
-      currentWord.value = firstWord;
-      ChatRoom1Ref.value?.initMsgList(firstWord);
-      ChatRoom2Ref.value?.initMsgList(firstWord);
-      wordList.value = words;
+      // const words = [...result];
+      // const firstWord = words.pop()?.word || '';
+      currentWord.value = result[0].word;
+      ChatRoom1Ref.value?.initMsgList(result[0].word);
+      ChatRoom2Ref.value?.initMsgList(result[0].word);
+      wordList.value = result;
     })
   } else {
     const result = [...newValue.words];
-    const firstWord = result.pop()?.word || '';
-    currentWord.value = firstWord;
-    ChatRoom1Ref.value?.initMsgList(firstWord);
-    ChatRoom2Ref.value?.initMsgList(firstWord);
+    //const firstWord = result.pop()?.word || '';
+    currentWord.value = result[0].word;
+    ChatRoom1Ref.value?.initMsgList(result[0].word);
+    ChatRoom2Ref.value?.initMsgList(result[0].word);
     wordList.value = result;
   }
 },{deep:false})
@@ -103,7 +103,8 @@ const room2Height = computed(() => {
   return room2.value?.clientHeight ? room2.value?.clientHeight - 8 : 0;
 });
 
-const clearWord = (current) => {  // 删除单词,必要时需要阻止冒泡
+const clearWord = (e,current) => {  // 删除单词,必要时需要阻止冒泡
+  e.stopPropagation();
   wordList.value = wordList.value.filter(item => item.id !== current.id);
   extractWords({size:1},currentSelectedSideBarItem.value.id).then((res :any) => {
     const result = [];
@@ -115,12 +116,14 @@ const clearWord = (current) => {  // 删除单词,必要时需要阻止冒泡
     })
     wordList.value.push(...result);
   })
+  currentSelectedSideBarItem.value.words = wordList.value;
+  sideBarStore.handleChangeSide(currentSelectedSideBarItem);
 }
 
 const nextWord = () => { // 下一个单词
-  currentWord.value = wordList.value[0]?.word || '';
-  ChatRoom1Ref.value?.getMsgList(wordList.value[0]?.word || '');
-  wordList.value = wordList.value.filter((item,index) => index !== 0);
+  currentWord.value = wordList.value[1]?.word || '';
+  ChatRoom1Ref.value?.getMsgList(wordList.value[1]?.word || '');
+  wordList.value = wordList.value.slice(1);
   extractWords({size:1},currentSelectedSideBarItem.value.id).then((res :any) => {
     const result = [];
     res.data.forEach(item => {
@@ -131,6 +134,8 @@ const nextWord = () => { // 下一个单词
     })
     wordList.value.push(...result);
   })
+  currentSelectedSideBarItem.value.words = wordList.value;
+  sideBarStore.handleChangeSide(currentSelectedSideBarItem);
 }
 const speakWord = () => {
   const msg = new SpeechSynthesisUtterance();
@@ -144,9 +149,10 @@ const speakWord = () => {
 };
 
 const handleChangeWord = (current) => { // 点击单词，对应的单词设置为当前单词，同时抽取一个单词
-  currentWord.value = current.word;
   ChatRoom1Ref.value?.getMsgList(current.word);
   wordList.value = wordList.value.filter(item => item.id !== current.id);
+  wordList.value.unshift(current);
+  currentWord.value = wordList.value[0].word;
   extractWords({size:1},currentSelectedSideBarItem.value.id).then((res :any) => {
     const result = [];
     res.data.forEach(item => {
@@ -157,6 +163,8 @@ const handleChangeWord = (current) => { // 点击单词，对应的单词设置�
     })
     wordList.value.push(...result);
   })
+  currentSelectedSideBarItem.value.words = wordList.value;
+  sideBarStore.handleChangeSide(currentSelectedSideBarItem);
 };
 
 const handleCallback = (param:any,type:string) => {
@@ -216,6 +224,7 @@ const handleCallback = (param:any,type:string) => {
     line-height: 36px;
     width: 144px;
     position: relative;
+    cursor: pointer;
     .close-icon {
       position: absolute;
       top: -6px;
