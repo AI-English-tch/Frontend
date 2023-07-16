@@ -120,7 +120,7 @@ async function initMsgList(word) {
           'CLIENT-TOC': 'Y'
         }
       });
-      isNewMsg.value = true
+      isNewMsg.value = true;
       masterSource.addEventListener('master',function (event) {
         pushMsg(event,isNewMsg.value);
         isNewMsg.value = false
@@ -147,6 +147,7 @@ async function initMsgList(word) {
 }
 // 消息插入
 async function pushMsg(e,isNew) {
+  e.data = decodeURIComponent(e.data);
   handleToBottom()
   if(isNew) {
     messageList.value.push({
@@ -157,8 +158,7 @@ async function pushMsg(e,isNew) {
   } else {
     messageList.value.map((item,index) => {
       if(index === messageList.value.length - 1) {
-        item.text = item.text + (e.data === "." ? '.' : ` ${e.data}`);
-        //item.text = item.text + e.data;
+        item.text = item.text + e.data;
       }
     })
   }

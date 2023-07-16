@@ -77,8 +77,6 @@ watch(currentSelectedSideBarItem, (newValue)=>{ // 切换词书
       });
       newValue.words = result;
       sideBarStore.handleChangeSide(newValue);
-      // const words = [...result];
-      // const firstWord = words.pop()?.word || '';
       currentWord.value = result[0].word;
       ChatRoom1Ref.value?.initMsgList(result[0].word);
       ChatRoom2Ref.value?.initMsgList(result[0].word);
@@ -86,7 +84,6 @@ watch(currentSelectedSideBarItem, (newValue)=>{ // 切换词书
     })
   } else {
     const result = [...newValue.words];
-    //const firstWord = result.pop()?.word || '';
     currentWord.value = result[0].word;
     ChatRoom1Ref.value?.initMsgList(result[0].word);
     ChatRoom2Ref.value?.initMsgList(result[0].word);
@@ -136,6 +133,7 @@ const nextWord = () => { // 下一个单词
   })
   currentSelectedSideBarItem.value.words = wordList.value;
   sideBarStore.handleChangeSide(currentSelectedSideBarItem);
+  ChatRoom1Ref.value?.clearMsgList();
 }
 const speakWord = () => {
   const msg = new SpeechSynthesisUtterance();
