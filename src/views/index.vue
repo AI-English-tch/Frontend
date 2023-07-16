@@ -12,7 +12,7 @@
       <div v-if="currentSelectedSideBarItem" class="bg-white p-4 w-full flex-1 overflow-auto word-content">
         <div class="book-name">正在阅览：{{currentSelectedSideBarItem?.text || ''}}</div>
         <div class="mb-1 current-word">{{currentWord}}</div>
-        <div class="speak-btn" @click="speakWord"><img src="src/assets/images/play.svg" />单词发音</div>
+        <div class="speak-btn" @click="speakWord"><img src="../assets/images/play.svg" />单词发音</div>
         <div class="flex justify-around mb-3 operate-box">
           <el-button @click="nextWord" class="operate-item" type="primary">掌握</el-button>
           <el-button @click="nextWord" class="operate-item" type="primary">认识</el-button>
@@ -66,21 +66,33 @@ const { currentSelectedSideBarItem } = storeToRefs(sideBarStore)
 
 watch(currentSelectedSideBarItem, (newValue)=>{ // 切换词书
   const id = newValue.id;
-  extractWords({size:11},id).then((res :any) => {
-    const result = [];
-    res.data.forEach(item => {
-      result.push({
-        id: item.id,
-        word: item.word,
-      })
+  if(!newValue.words.length) {
+    extractWords({size:11},id).then((res :any) => {
+      const result = [];
+      res.data.forEach(item => {
+        result.push({
+          id: item.id,
+          word: item.word,
+        })
+      });
+      newValue.words = result;
+      sideBarStore.handleChangeSide(newValue);
+      const words = [...result];
+      const firstWord = words.pop()?.word || '';
+      currentWord.value = firstWord;
+      ChatRoom1Ref.value?.initMsgList(firstWord);
+      ChatRoom2Ref.value?.initMsgList(firstWord);
+      wordList.value = words;
     })
+  } else {
+    const result = [...newValue.words];
     const firstWord = result.pop()?.word || '';
     currentWord.value = firstWord;
     ChatRoom1Ref.value?.initMsgList(firstWord);
     ChatRoom2Ref.value?.initMsgList(firstWord);
     wordList.value = result;
-  })
-},{deep:true})
+  }
+},{deep:false})
 
 const wordList = ref<string[]>([]);
 const currentWord = ref<string>('');

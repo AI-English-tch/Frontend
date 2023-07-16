@@ -122,7 +122,6 @@ async function initMsgList(word) {
       });
       isNewMsg.value = true
       masterSource.addEventListener('master',function (event) {
-        console.log(event,'master')
         pushMsg(event,isNewMsg.value);
         isNewMsg.value = false
       });

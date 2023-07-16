@@ -18,8 +18,8 @@
                   <div class="line"></div>
                 </div>
                 <ol>
-                    <template v-for="(item) in customerBookList" :key="item.id">
-                        <li class="relative border mb-3 mr-1 ml-1">
+                    <div v-for="(item) in customerBookList" :key="item.id" :class="item.id === currentSelectedSideBarItem?.id ? 'active' : ''">
+                        <li class="relative border mb-3 mr-1 ml-1" >
                             <div class="del-book-btn" @click="openDelBookBox(item)"><el-icon><CloseBold /></el-icon></div>
                             <a @click="changeBook(item)"
                             class="flex py-3 px-3 items-center justify-center gap-3 relative rounded-md hover:bg-[#2A2B32] cursor-pointer break-all !hover:pr-4 bg-transparent group transition-colors group">
@@ -28,7 +28,7 @@
                             </div>
                             </a>
                         </li>
-                    </template>
+                    </div>
                 </ol>
               </div>
             </div>
@@ -139,6 +139,7 @@ const loadUserBook = (username) => {
       arr.push({
         text: item.name,
         id: item.id,
+        words:[], //词书缓存单词
       })
     })
     customerBookList.value = arr;
@@ -225,9 +226,14 @@ const userLogout = () => { // TODO 退出登陆
     height: 0;
     border-bottom: 1px solid rgba(243, 243, 243, 0.7058823529411765);
   }
+  .active {
+    a {
+      background-color: rgba(42, 43, 50, 1);
+    }
+  }
   .border{
     border: 1px solid rgba(243, 243, 243, 0.7058823529411765);
-    border-radius: 4px;
+    border-radius: 8px;
     text-align: center;
     position: relative;
     &:hover {
