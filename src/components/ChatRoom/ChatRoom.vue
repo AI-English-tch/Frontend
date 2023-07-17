@@ -134,7 +134,7 @@ async function initMsgList(word) {
       if (props.apiKey === 'ask' && !arr.length) { //初始只有主聊天需要自动发送一次对话
         const param = {
           bookId: currentSelectedSideBarItem.value.id,
-          message: '/start Use the AI as Simulator Tool*',
+          message:`Let’s start to learn the word ${word}*`,
           word: word,
           inject: {"word":word}
         }
@@ -255,7 +255,7 @@ defineExpose({
     if (param && param.ask && assistantSwitch.value) {// 初始或者输入框内容为空不调用助手检测
       const query = {
         bookId: currentSelectedSideBarItem.value.id,
-        message: '开始纠错*',
+        message: 'Check the sentence*',
         word,
         inject:{"sentence":param.ask},
       }
