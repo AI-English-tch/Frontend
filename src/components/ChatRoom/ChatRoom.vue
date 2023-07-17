@@ -112,25 +112,17 @@ async function initMsgList(word) {
       })
     })
     messageList.value = arr;
-    const token = Session.getToken();
     if(props.apiKey === 'ask') {
-      masterSource = new EventSourcePolyfill('/dev-api/ai/sse/open', {
-        headers: {
-          Authorization: token ? `Bearer ${token}` : "",
-          'CLIENT-TOC': 'Y'
-        }
-      });
+      // const token = Session.getToken();
+      // masterSource = new EventSourcePolyfill('/dev-api/ai/sse/open', {
+      //   headers: {
+      //     Authorization: token ? `Bearer ${token}` : "",
+      //     'CLIENT-TOC': 'Y'
+      //   }
+      // });
+      loadSource();
       isNewMsg.value = true;
-      masterSource.addEventListener('master',function (event) {
-        pushMsg(event,isNewMsg.value);
-        isNewMsg.value = false
-      });
 
-      masterSource.addEventListener('servant',function (event) {
-        if(props.callback) {
-          props.callback(event,'eventsource');
-        }
-      });
       if (props.apiKey === 'ask' && !arr.length) { //初始只有主聊天需要自动发送一次对话
         const param = {
           bookId: currentSelectedSideBarItem.value.id,
@@ -145,6 +137,31 @@ async function initMsgList(word) {
     handleToBottom()
   });
 }
+
+const loadSource = () => {
+  const token = Session.getToken();
+  let newMasterSource = new EventSourcePolyfill('/dev-api/ai/sse/open', {
+    headers: {
+      Authorization: token ? `Bearer ${token}` : "",
+      'CLIENT-TOC': 'Y'
+    }
+  });
+  masterSource = newMasterSource;
+  newMasterSource.addEventListener('master',function (event) {
+    pushMsg(event,isNewMsg.value);
+    isNewMsg.value = false
+  });
+  newMasterSource.addEventListener('servant',function (event) {
+    if(props.callback) {
+      props.callback(event,'eventsource');
+    }
+  });
+  newMasterSource.onerror = () => {
+    masterSource.close();
+    loadSource()
+  }
+}
+
 // 消息插入
 async function pushMsg(e,isNew) {
   e.data = decodeURIComponent(e.data);
