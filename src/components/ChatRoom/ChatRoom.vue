@@ -255,9 +255,9 @@ defineExpose({
     if (param && param.ask && assistantSwitch.value) {// 初始或者输入框内容为空不调用助手检测
       const query = {
         bookId: currentSelectedSideBarItem.value.id,
-        message: 'Check the sentence*',
+        message: `Check the sentence: ${param.ask}*`,
         word,
-        inject:{"sentence":param.ask},
+        inject:null
       }
       chatMsgControl(query, 2)
     }
